@@ -5,7 +5,7 @@
 <p>为兰州理工大学校园生活设计的轻量 Android 课表应用。</p>
 
 <p>
-<a href="https://github.com/Enota13-name/LUTschedule/releases/download/v1.0.1/LUT-Schedule-1.0.1.apk"><strong>下载正式版</strong></a>
+<a href="https://github.com/Enota13-name/LUTschedule/releases/latest"><strong>下载 APK</strong></a>
 &nbsp; · &nbsp;
 <a href="docs/FEATURES.md">探索功能</a>
 &nbsp; · &nbsp;
