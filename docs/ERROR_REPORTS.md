@@ -15,4 +15,4 @@
 
 ## 示例
 
-仓库测试通过合成 IllegalStateException、含秘密字段的消息、环形记录溢出、重复事件、复制与恢复标志来验证；不会将真实用户报告放进此仓库。`tests/android/RuntimeV018.java` 是当前界面与报告集成入口。
+仓库测试通过合成 IllegalStateException、含秘密字段的消息、环形记录溢出、重复事件、复制与恢复标志来验证；不会将真实用户报告放进此仓库。当前入口为 `tests/android/RuntimeV019.java`、`RuntimeV017.java`、`RuntimeV016.java`；旧版本的完整报告压力与恢复测试保存在 release/0.1.8-preview 分支。入口模式由 AccessMode 和 MainActivity 管理，导入模式不得触发官网后台任务。

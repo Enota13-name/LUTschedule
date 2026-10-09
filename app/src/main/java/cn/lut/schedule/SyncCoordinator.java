@@ -24,12 +24,12 @@ final class SyncCoordinator {
     private boolean timetableOk,gradesOk,examsOk;private StringBuilder details;private Callback callback;private ScheduleCore.Status failure;
     private static final String[] READ_ONLY={"体测成绩管理","课程查询","学分收费管理","学业完成查询","成绩认定"};
     SyncCoordinator(Context context,FrameLayout host,SiteGateway course){this.context=context;this.host=host;this.course=course;prefs=context.getSharedPreferences("settings",0);}
-    void start(Callback cb){close();finished=false;callback=cb;details=new StringBuilder();failure=ScheduleCore.Status.ADAPTER_PENDING;timetableOk=gradesOk=examsOk=false;int ticket=generation;
+    void start(Callback cb){close();if(!AccessMode.official(context)){cb.finished(ScheduleCore.Status.IDLE,"本地课表，不连接教务系统");return;}finished=false;callback=cb;details=new StringBuilder();failure=ScheduleCore.Status.ADAPTER_PENDING;timetableOk=gradesOk=examsOk=false;int ticket=generation;
         prefs.edit().putLong("last_attempt",System.currentTimeMillis()).apply();
         course.start((status,message,page)->{if(ticket!=generation||finished)return;
-            if(status==ScheduleCore.Status.SUCCESS&&page!=null){try(SnapshotStore cache=new SnapshotStore(context)){
+            if(!authorized(ticket))return;if(status==ScheduleCore.Status.SUCCESS&&page!=null){try(SnapshotStore cache=new SnapshotStore(context)){
                 String monday=prefs.getString("first_monday","");String term=prefs.getString("calendar_semester","");if(!term.isEmpty()&&!page.optString("semester").isEmpty()&&!term.equals(page.optString("semester")))monday="";
-                ScheduleCore.Snapshot snapshot=CourseReader.decode(page,monday,1,System.currentTimeMillis());cache.save(snapshot);timetableOk=true;prefs.edit().putBoolean("demo",false).putLong("timetable_updated",snapshot.fetchedAt).apply();
+                ScheduleCore.Snapshot snapshot=CourseReader.decode(page,monday,1,System.currentTimeMillis());cache.save(snapshot);timetableOk=true;prefs.edit().putLong("timetable_updated",snapshot.fetchedAt).apply();
             }catch(Exception e){details.append("课表：校验未完成，保留缓存\n");}}
             else{failure=status;details.append("课表：").append(message).append('\n');}
             if(status==ScheduleCore.Status.LOGIN_REQUIRED){finish(ticket);return;}stage=0;openModule(ticket);
@@ -37,7 +37,7 @@ final class SyncCoordinator {
     }
     private String kind(){return stage==0?"grades":stage==1?"exams":"service:"+service();}
     private String service(){return stage==0?"成绩查询":stage==1?"我的考试安排":READ_ONLY[stage-2];}
-    private void openModule(int ticket){if(ticket!=generation||finished)return;destroyWeb();clicked=reading=false;int currentStage=stage;
+    private void openModule(int ticket){if(!authorized(ticket))return;destroyWeb();clicked=reading=false;int currentStage=stage;
         try{web=new WebView(context);SiteGateway.configure(web);host.addView(web,new FrameLayout.LayoutParams(context.getResources().getDisplayMetrics().widthPixels,context.getResources().getDisplayMetrics().heightPixels));}
         catch(RuntimeException|LinkageError e){moduleFailed(ticket,"系统网页组件不可用");return;}
         WebView current=web;String route=AcademicCatalog.route(prefs,service());
@@ -54,8 +54,8 @@ final class SyncCoordinator {
         handler.postDelayed(()->{if(ticket==generation&&stage==currentStage&&web==current)moduleFailed(ticket,"读取超时，保留缓存");},35000);
         current.loadUrl(SiteGateway.savedPageUrl(route).isEmpty()?SiteGateway.HOME:route);
     }
-    private void poll(int ticket,int doc,int attempt){if(ticket!=generation||finished||doc!=document||web==null||reading)return;reading=true;WebView current=web;String module=kind();
-        AcademicReader.read(current,module,(page,error)->{if(ticket!=generation||current!=web||doc!=document||finished)return;reading=false;
+    private void poll(int ticket,int doc,int attempt){if(!authorized(ticket)||doc!=document||web==null||reading)return;reading=true;WebView current=web;String module=kind();
+        AcademicReader.read(current,module,(page,error)->{if(!authorized(ticket)||current!=web||doc!=document)return;reading=false;
             if(page!=null){rememberLinks(context,page);if(page.optBoolean("login")){failure=ScheduleCore.Status.LOGIN_REQUIRED;details.append(service()).append("：登录已失效\n");finish(ticket);return;}
                 if(page.optBoolean("complete")){try(AcademicStore data=new AcademicStore(context)){data.save(module,page,scope(page),System.currentTimeMillis());if(stage==0)gradesOk=true;else if(stage==1)examsOk=true;prefs.edit().putLong(module+"_updated",System.currentTimeMillis()).apply();next(ticket);return;}catch(Exception e){moduleFailed(ticket,"结果校验失败，保留缓存");return;}}
                 if(!clicked&&page.optBoolean("portal")){String route=AcademicCatalog.route(prefs,service());if(SiteGateway.allowed(route)&&!route.equals(current.getUrl())){clicked=true;current.loadUrl(route);return;}
@@ -73,7 +73,8 @@ final class SyncCoordinator {
         try{byte[] bytes=MessageDigest.getInstance("SHA-256").digest(value.getBytes(java.nio.charset.StandardCharsets.UTF_8));StringBuilder out=new StringBuilder();for(byte b:bytes)out.append(String.format(Locale.ROOT,"%02x",b&255));return out.toString();}catch(Exception e){throw new IllegalStateException(e);}}
     private void moduleFailed(int ticket,String reason){if(ticket!=generation||finished)return;details.append(service()).append("：").append(reason).append('\n');next(ticket);}
     private void next(int ticket){if(ticket!=generation||finished)return;stage++;while(stage>=2&&stage<READ_ONLY.length+2&&AcademicCatalog.route(prefs,service()).isEmpty()){details.append(service()).append("：尚未发现官网链接\n");stage++;}if(stage>=READ_ONLY.length+2)finish(ticket);else openModule(ticket);}
-    private void finish(int ticket){if(ticket!=generation||finished)return;finished=true;boolean ok=timetableOk&&gradesOk&&examsOk;long time=System.currentTimeMillis();if(ok)prefs.edit().putLong("last_full_success",time).apply();String message=ok?"课表、成绩和考试已校验并保存":details.toString();prefs.edit().putString("sync_detail",message).apply();Callback cb=callback;destroyWeb();handler.removeCallbacksAndMessages(null);if(cb!=null)cb.finished(ok?ScheduleCore.Status.SUCCESS:failure,message);}
+    private boolean authorized(int ticket){if(ticket!=generation||finished)return false;if(AccessMode.official(context))return true;Callback cb=callback;close();if(cb!=null)cb.finished(ScheduleCore.Status.IDLE,"已切换为本地课表，停止官网读取");return false;}
+    private void finish(int ticket){if(!authorized(ticket))return;finished=true;boolean ok=timetableOk&&gradesOk&&examsOk;long time=System.currentTimeMillis();if(ok)prefs.edit().putLong("last_full_success",time).apply();String message=ok?"课表、成绩和考试已校验并保存":details.toString();prefs.edit().putString("sync_detail",message).apply();Callback cb=callback;destroyWeb();handler.removeCallbacksAndMessages(null);if(cb!=null)cb.finished(ok?ScheduleCore.Status.SUCCESS:failure,message);}
     private void destroyWeb(){if(web!=null){WebView old=web;web=null;try{old.stopLoading();host.removeView(old);old.destroy();}catch(RuntimeException ignored){}}}
     void close(){generation++;finished=true;callback=null;handler.removeCallbacksAndMessages(null);course.close();destroyWeb();}
 }

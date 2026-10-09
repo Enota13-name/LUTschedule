@@ -38,7 +38,7 @@ public final class CoreTests {
         ScheduleCore.SyncState state=new ScheduleCore.SyncState();int old=state.begin();int current=state.begin();
         check(!state.finish(old,ScheduleCore.Status.SUCCESS,ScheduleCore.Source.OFFICIAL,100),"ignore late prior refresh");
         check(!state.isCurrent(old)&&state.isCurrent(current),"stale response cannot replace disk cache");
-        rejects(()->state.finish(current,ScheduleCore.Status.SUCCESS,ScheduleCore.Source.DEMO,100),"demo never receives success icon");
+        rejects(()->state.finish(current,ScheduleCore.Status.SUCCESS,null,100),"missing source never receives success icon");
         rejects(()->state.finish(current,ScheduleCore.Status.SUCCESS,ScheduleCore.Source.IMPORT,100),"import never receives success icon");
         check(state.finish(current,ScheduleCore.Status.SUCCESS,ScheduleCore.Source.OFFICIAL,100),"verified official sync succeeds");
         check(state.lastSuccess()==100,"store successful sync timestamp");
@@ -54,6 +54,19 @@ public final class CoreTests {
         check(AppRules.foreground(0xFFFFFFFF)==0xFF000000&&AppRules.foreground(0xFF000000)==0xFFFFFFFF,"inverse foreground at light and dark locations");
         for(int gray=0;gray<=255;gray+=5){int sample=0xFF000000|(gray<<16)|(gray<<8)|gray;check(AppRules.contrast(AppRules.foreground(sample),sample)>=4.5,"readable local contrast at gray "+gray);}
         ScheduleCore.Course rawNight=new ScheduleCore.Course("晚课","","",2,11,12,Arrays.asList(1));ScheduleCore.Snapshot raw=new ScheduleCore.Snapshot("秋",LocalDate.of(2026,9,7),20,ScheduleCore.Source.IMPORT,0,Arrays.asList(rawNight),12);check(raw.periodCount==12,"official period count preserves late and empty periods");
+        int[] majority=new int[100];Arrays.fill(majority,0xFF173248);for(int i=0;i<20;i++)majority[i]=0xFFFFFFFF;
+        check(AppRules.dominant(majority)==0xFF173248,"largest area wins over minority brightness");
+        Arrays.fill(majority,0xFFF4E1C3);for(int i=0;i<10;i++)majority[i]=0xFF000000;
+        check(AppRules.foreground(AppRules.dominant(majority))==0xFF000000,"bright majority selects one dark foreground");
+        int[] near={0xFF102030,0xFF112132,0xFF142435,0xFFE0E0E0};check(AppRules.dominant(near)==0xFF112132,"nearby colors form one quantized family");
+        rejects(()->AppRules.dominant(new int[0]),"empty color data rejected");
+        for(int fill:new int[]{0xFF30473C,0xFF624632,0xFF30495F,0xFF4C3B65,0xFF603B46,0xFFCCCCCC})for(int fg:new int[]{0xFFFFFFFF,0xFF000000})check(AppRules.contrast(AppRules.readableSurface(fill,fg),fg)>=4.5,"one foreground remains readable on course cards");
+        check(AppRules.location("集贤楼（原西教2号楼）205").room.equals("205"),"room number separate from building numbers");
+        check(AppRules.location("西教B实验楼501").building.equals("西教B实验楼"),"retain complete building above room");
+        check(AppRules.location("示例教室 A201").room.equals("A201"),"alphanumeric room identifier");
+        check(AppRules.location("蔚云楼 (306)").room.equals("306"),"parenthesized room number");
+        check(AppRules.location("运动场").room.equals("运动场"),"outdoor location remains whole");
+        check(AppRules.location("").room.equals("地点待定"),"missing location is explicit");
         System.out.println("PASS: "+checks+" meaningful core checks");
     }
 }

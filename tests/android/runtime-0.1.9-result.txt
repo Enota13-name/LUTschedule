@@ -1,0 +1,17 @@
+design
+INSTRUMENTATION_RESULT: result=PASS: 101 v019 assertions: source choice, no fabricated courses, import isolation and 23 blocked services, cache preservation, dominant unified foreground, header without strip, varied dark courses, palette room final line, native pinch crop, fixed attribution and five-tap clipboard, source report links
+
+
+INSTRUMENTATION_CODE: -1
+
+protocol
+INSTRUMENTATION_RESULT: result=
+PASS: 38 official protocol assertions: 23 direct routes, hidden portal links, complete grades, exam publication and time, timetable and calendar, full screen official view, authenticated automatic timetable routing
+
+INSTRUMENTATION_CODE: -1
+
+regression
+INSTRUMENTATION_RESULT: result=
+
+PASS: 41 integration assertions: grade/exam DOM and observed JSON, validation, pagination, cache preservation, baseline/account isolation, durable inbox, foreground notification and dedup, top banner, ten raw periods, exams in date columns, settings/report, full-page dominant wallpaper foreground, left/right controls, official service WebView, one-shot persisted idle job and rearm, dark startup
+INSTRUMENTATION_CODE: -1

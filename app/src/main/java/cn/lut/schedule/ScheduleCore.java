@@ -7,9 +7,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-/** Pure Java model. Import, demo and official snapshots never share a success state. */
+/** Pure Java model. Imported and official snapshots never share a success state. */
 public final class ScheduleCore {
-    public enum Source { OFFICIAL, IMPORT, DEMO }
+    public enum Source { OFFICIAL, IMPORT }
     public enum Status { IDLE, UPDATING, SUCCESS, LOGIN_REQUIRED, OFFLINE, UNREACHABLE, SERVER_ERROR, ADAPTER_PENDING, PARSE_ERROR }
     public static final class Course {
         public final String name, teacher, room;
