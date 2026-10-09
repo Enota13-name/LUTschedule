@@ -1,0 +1,2 @@
+-keep class cn.lut.schedule.MainActivity { *; }
+-keepattributes SourceFile,LineNumberTable

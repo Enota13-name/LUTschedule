@@ -1,0 +1,11 @@
+/.gradle/
+/local.properties
+**/build/
+**/runtime-test-build/
+/signing/
+*.jks
+*.keystore
+*.p12
+*.idsig
+__pycache__/
+*.log

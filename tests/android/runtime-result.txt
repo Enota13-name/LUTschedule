@@ -1,0 +1,2 @@
+INSTRUMENTATION_RESULT: result=PASS: academic menu visible outside demo; four official categories and 14 teacher/student services; native text-only details and unconfirmed categories; selected category persistence; my timetable navigation; dark recreation; cached data unchanged
+INSTRUMENTATION_CODE: -1
