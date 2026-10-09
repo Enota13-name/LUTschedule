@@ -358,7 +358,7 @@ public final class MainActivity extends Activity {
         setting(content,"清除数据并退出账号","清除课程、成绩、考试、未读消息和官网会话",()->new AppDialog.Builder(this).setTitle("清除数据并退出？").setMessage("保留风格与背景设置。再次登录后会建立新的成绩基线。").setPositiveButton("清除并退出",(d,w)->logout()).setNegativeButton("取消",null).show());
         group(content,"关于与排查");
         developerSetting(content);
-        setting(content,"使用声明","非官方应用 · 不可商用 · 1.0.0",()->explain("使用声明","用于个人非商业学习与课表查看。开发者：Enota13。官网网页登录会话仅保存在本机，项目不自动上传教务数据或错误报告。"));
+        setting(content,"使用声明","非官方应用 · 不可商用 · 1.0.1",()->explain("使用声明","用于个人非商业学习与课表查看。应用名称：牛逼课表。开发者：Enota13。官网网页登录会话仅保存在本机，项目不自动上传教务数据或错误报告。"));
         setting(content,"项目仓库","github.com/Enota13-name/LUTschedule",()->{try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(BuildInfo.REPOSITORY)));}catch(Exception e){Diagnostics.record(this,"打开项目仓库",e,false);}});
         group(content,"错误报告");
         setting(content,"复制错误报告",Diagnostics.last(this).isEmpty()?"设备、版本、源码链接与排查指引":"已记录错误 · 复制后交给 AI 排查",this::showErrorReport);
@@ -388,7 +388,7 @@ return scroll;
     private void setting(LinearLayout host,String name,String summary,Runnable callback){LinearLayout item=vertical();item.setPadding(dp(2),dp(14),dp(2),dp(14));clickable(item,Color.TRANSPARENT);item.addView(title(name,15));space(item,6);item.addView(text(summary,12,muted));item.setContentDescription(name);item.setOnClickListener(v->{developerTaps=0;IdleRefresh.operated(this);ErrorReports.breadcrumb(this,"设置："+name);callback.run();});host.addView(item,new LinearLayout.LayoutParams(-1,-2));divider(host);}
     private void pick(String mime,int request){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType(mime);i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);try{startActivityForResult(i,request);}catch(Exception e){Diagnostics.record(this,"系统文件选择器",e,false);toast("没有可用的文件选择器");}}
     private void developerSetting(LinearLayout host){
-        LinearLayout item=vertical();developerRow=item;item.setPadding(dp(2),dp(14),dp(2),dp(14));item.addView(title("开发者",15));space(item,6);item.addView(text(BuildInfo.DEVELOPER,12,ink));
+        LinearLayout item=vertical();developerRow=item;item.setPadding(dp(2),dp(14),dp(2),dp(14));item.addView(title("开发者",15));space(item,6);item.addView(text(BuildInfo.DEVELOPER,12,ink));space(item,4);item.addView(text("app图标作者：他不想署名",12,muted));
         item.setContentDescription("开发者 Enota13");item.setSoundEffectsEnabled(false);item.setHapticFeedbackEnabled(false);item.setOnClickListener(v->developerTap());host.addView(item,new LinearLayout.LayoutParams(-1,-2));divider(host);
     }
     private void developerTap(){

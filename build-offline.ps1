@@ -3,8 +3,8 @@ param(
     [string]$JdkPath = 'D:\Android\jbr',
     [string]$BuildDir = '',
     [string]$SigningKey = '',
-    [string]$VersionName = '1.0.0',
-    [int]$VersionCode = 11
+    [string]$VersionName = '1.0.1',
+    [int]$VersionCode = 12
 )
 $ErrorActionPreference = 'Stop'
 $projectPath = $PSScriptRoot

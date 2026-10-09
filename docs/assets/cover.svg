@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="390" viewBox="0 0 1280 390" role="img" aria-labelledby="title desc">
-  <title id="title">LUTschedule · 课间 LUT</title>
+  <title id="title">牛逼课表</title>
   <desc id="desc">深色背景上的项目名称和标语，一侧以抽象课程块表现一周的安排。</desc>
   <defs>
     <linearGradient id="base" x1="0" y1="0" x2="1" y2="1">
@@ -15,11 +15,11 @@
   <path d="M0 389H1280" stroke="#5b6170" stroke-opacity=".5"/>
   <g font-family="Inter,Segoe UI,Microsoft YaHei,Noto Sans CJK SC,sans-serif">
     <text x="68" y="64" font-size="15" fill="#afb5c2" letter-spacing="2">ENOTA13 / ANDROID</text>
-    <text x="64" y="171" font-size="78" font-weight="600" fill="#f4f1ea" letter-spacing="-3">LUTschedule</text>
+    <text x="64" y="171" font-size="78" font-weight="600" fill="#f4f1ea" letter-spacing="-3">牛逼课表</text>
     <text x="69" y="233" font-size="31" fill="#d9d7d1">一眼看清一周。</text>
-    <text x="70" y="319" font-size="17" fill="#aeb4c0">课间 · LUT</text>
+    <text x="70" y="319" font-size="17" fill="#aeb4c0">LUTschedule</text>
     <path d="M191 306V321" stroke="#5c6370"/>
-    <text x="211" y="319" font-size="15" fill="#aeb4c0" letter-spacing="1">1.0.0</text>
+    <text x="211" y="319" font-size="15" fill="#aeb4c0" letter-spacing="1">正式版 1.0.1</text>
     <g transform="translate(756 62)">
       <rect x="0" y="0" width="454" height="268" fill="url(#fade)"/>
       <g font-size="12" fill="#bdc3ce" text-anchor="middle" letter-spacing="1">

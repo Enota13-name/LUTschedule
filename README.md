@@ -1,18 +1,18 @@
 <div align="center">
 
-<img src="docs/assets/cover.svg" width="100%" alt="LUTschedule · 课间 LUT · 一眼看清一周">
+<img src="docs/assets/cover.svg" width="100%" alt="牛逼课表 · 一眼看清一周">
 
 <p>为兰州理工大学校园生活设计的轻量 Android 课表应用。</p>
 
 <p>
-<a href="https://github.com/Enota13-name/LUTschedule/releases/download/v1.0.0/LUT-Schedule-1.0.0.apk"><strong>下载正式版</strong></a>
+<a href="https://github.com/Enota13-name/LUTschedule/releases/download/v1.0.1/LUT-Schedule-1.0.1.apk"><strong>下载正式版</strong></a>
 &nbsp; · &nbsp;
 <a href="docs/FEATURES.md">探索功能</a>
 &nbsp; · &nbsp;
-<a href="https://github.com/Enota13-name/LUTschedule/releases/tag/v1.0.0">版本详情</a>
+<a href="https://github.com/Enota13-name/LUTschedule/releases/tag/v1.0.1">版本详情</a>
 </p>
 
-<p><strong>1.0.0</strong> &nbsp; / &nbsp; Android 8.0+ &nbsp; / &nbsp; 约 113 KB &nbsp; / &nbsp; 原生 Java</p>
+<p><strong>1.0.1</strong> &nbsp; / &nbsp; Android 8.0+ &nbsp; / &nbsp; 253 KiB &nbsp; / &nbsp; 原生 Java</p>
 
 </div>
 
@@ -60,9 +60,9 @@
 
 ## 正式版与验证
 
-当前正式版为 **1.0.0**，首页和下载区只展示这一版本。安装包沿用本项目签名，支持覆盖安装。
+当前正式版为 **1.0.1**，首页和下载区只展示这一版本。应用名称为「牛逼课表」，图标主体居中，安装包沿用本项目签名，支持覆盖安装。
 
-**123 项核心检查 · 7 项报告脱敏检查 · 216 项 Android 合成断言通过。** 生产入口冷启动与网络等待检查通过。
+**本次通过 123 项核心检查、7 项报告脱敏检查和 136 项 Android 界面断言。** 生产入口冷启动与网络等待检查通过，图标与署名已核验。官网协议、通知及后台逻辑沿用已有验证，本次未重复执行对应测试。
 
 小米 15 Pro 实机及 App 内真实学校账号全量同步尚未完成验证；后台检查的实际执行时间受 Android 节电策略影响。完整证据与范围见 [verification.json](verification.json)。
 
@@ -72,7 +72,7 @@
 |---|---|
 | 使用与体验 | [重点功能与截图](docs/FEATURES.md) · [课表导入格式](docs/IMPORT_FORMAT.md) |
 | 需求与设计过程 | [最终需求提示词](docs/FINAL_PROMPT.md) · [Vibe coding 复盘](docs/VIBE_CODING_REVIEW.md) |
-| 开发与维护 | [构建与验证](docs/DEVELOPMENT.md) · [错误报告排查](docs/ERROR_REPORTS.md) |
+| 开发与维护 | [构建与验证](docs/DEVELOPMENT.md) · [错误报告排查](docs/ERROR_REPORTS.md) · [图标素材说明](docs/ICON.md) |
 
 <details>
 <summary>一条非常直接的设计评审</summary>
@@ -87,6 +87,7 @@
 
 <div align="center">
 <strong>Enota13</strong><br>
-课间 · LUT · 非官方应用 · 不可商用<br>
+app图标作者：他不想署名<br>
+牛逼课表 · 非官方应用 · 不可商用<br>
 <a href="NOTICE.txt">使用声明</a>
 </div>

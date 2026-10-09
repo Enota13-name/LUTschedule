@@ -1,13 +1,13 @@
 # Android 正式版合成测试
 
-当前入口 RuntimeSmoke，按来源与界面、官网协议、回归三阶段执行。测试使用合成导入文件和合成官网响应，不包含学校账号，也不调用应用内演示模式。
+当前入口 RuntimeSmoke，可按来源与界面、官网协议、回归三阶段执行。本次版本只重跑 design 阶段的 136 项断言，另做生产入口冷启动检查；其他阶段的既有证据保存在 Git 历史及 verification.json 的基线范围中，未算作本次通过。测试使用合成导入文件和合成官网响应，不包含学校账号，也不调用应用内演示模式。
 
 仅在专用模拟器使用。测试会清空该 App 的测试缓存、背景和设置，授予通知权限，写入合成成绩并强制一次符合条件的后台任务。不要对日常 App 数据运行。
 
 ```powershell
 .\build-offline.ps1 -JdkPath $env:JAVA_HOME
 .\tests\android\build-runtime-test.ps1 -JdkPath $env:JAVA_HOME
-adb -s emulator-5580 install -r ..\LUT-Schedule-1.0.0.apk
+adb -s emulator-5580 install -r ..\LUT-Schedule-1.0.1.apk
 adb -s emulator-5580 install -r .\tests\android\runtime-test-build\runtime-test.apk
 adb -s emulator-5580 shell am instrument -w -r -e phase design cn.lut.schedule.tests/.RuntimeSmoke
 adb -s emulator-5580 shell am instrument -w -r -e phase protocol cn.lut.schedule.tests/.RuntimeSmoke
@@ -16,7 +16,7 @@ adb -s emulator-5580 shell am instrument -w -r -e phase regression cn.lut.schedu
 
 App 与测试 APK 必须同签名。使用非默认构建目录时为测试传入 -SigningKey；签名私钥不公开。控制端有时间上限时分三次执行；每阶段需 PASS 和 INSTRUMENTATION_CODE: -1，超时不能算通过。
 
-| 阶段 | 实际断言 | 覆盖重点 |
+| 阶段 | 断言数 | 覆盖重点 |
 |---|---:|---|
 | RuntimeSourceUi / design | 136 | 首次来源、无虚构课程、导入隔离、23 项禁用、六种底栏顺序及真实对话框选择、三页整体主色字体、日期无整条底板、暗色彩色课程、房间号/色盘、双指裁剪、固定署名和五击剪贴板 |
 | RuntimeOfficialProtocol / protocol | 38 | 23 条直达路由、成绩完整分页、考试发布和时间、课表/校历、全屏官网、登录后自动采集路线 |

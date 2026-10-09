@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="36" />
-    <application android:name=".Diagnostics" android:label="课间 · LUT" android:icon="@drawable/ic_launcher"
+    <application android:name=".Diagnostics" android:label="牛逼课表" android:icon="@drawable/app_icon"
         android:theme="@style/AppTheme" android:allowBackup="false"
         android:usesCleartextTraffic="false" android:supportsRtl="true">
         <activity android:name=".BootstrapActivity" android:exported="true">

@@ -1,10 +1,10 @@
 {
-  "app": "课间 · LUT",
-  "version": "1.0.0",
-  "versionCode": 11,
-  "apk": "LUT-Schedule-1.0.0.apk",
-  "bytes": 115537,
-  "sha256": "F07027990B4AF7CC7AC069B96A1FB5BFE151C64AA578BFBE7548D2E0B0085501",
+  "app": "牛逼课表",
+  "version": "1.0.1",
+  "versionCode": 12,
+  "apk": "LUT-Schedule-1.0.1.apk",
+  "bytes": 258903,
+  "sha256": "EAA78864A2CD33B42BEF588D0CBE3AA753C1AF35F006EDC7072E76A617249C7D",
   "minAndroid": "8.0",
   "minSdk": 26,
   "targetSdk": 36,
@@ -15,8 +15,8 @@
   "signerSha256": "0b959c5671ddda5d9dcec039bf8405c01f5974095ca3c47a119eda9881ee3a1f",
   "sameSigningCertificateAsPreviousVersions": true,
   "coreChecks": 123,
-  "androidIntegrationAssertions": 216,
-  "androidRegressionAssertions": 42,
+  "androidIntegrationAssertions": 136,
+  "androidRegressionAssertions": 0,
   "androidIntegrationResult": "PASS",
   "emulatorAndroid": "15 / API 35",
   "launcherColdStartPassed": true,
@@ -53,18 +53,14 @@
   "actualIdleExecutionCanBeDeferredByAndroid": true,
   "verifiedWithSyntheticData": [
     "136 source/access/layout/attribution/navigation Android assertions",
-    "38 official protocol and direct route assertions",
-    "42 grade/notification/exam/idle/cache/launch regression assertions",
     "six tab permutations, actual dialog selection, semantic page identity and physical background position",
-    "recreation retains custom tab order while launching timetable",
     "one foreground chosen from all three visible panorama parts, no navigation color flips",
     "first-use real source choice, migration, separate caches and late response source guard",
     "all 23 services disabled in import mode and no official idle job",
     "independent today marker with no date strip, varied dark courses and room on final line",
     "two-finger crop/export/no blank edges/cancel preservation and course palette preview",
     "fixed developer, silent single tap, five taps copy exact email and app dialog",
-    "grade baseline/account isolation/inbox/top banner/Android notification and dedup",
-    "precise dated exams, persisted one-shot silent idle job and theme recreation"
+    "new fixed icon-author credit and existing five-tap clipboard behavior"
   ],
   "limitations": [
     "Native App full sync with a real school account has not been completed",
@@ -80,9 +76,9 @@
   ],
   "screenshots": "docs/screenshots / native captures with synthetic imported JSON and synthetic responses",
   "reportRedactionChecks": 7,
-  "androidProtocolAssertions": 38,
+  "androidProtocolAssertions": 0,
   "repository": "https://github.com/Enota13-name/LUTschedule",
-  "sourceRef": "v1.0.0",
+  "sourceRef": "v1.0.1",
   "repositoryPrivateKeyIncluded": false,
   "backgroundLayoutModes": [
     "shared",
@@ -95,6 +91,9 @@
   "diagnosticSchema": "LUTSCHEDULE_ERROR_REPORT_V1",
   "diagnosticReportAutoUpload": false,
   "developer": "Enota13",
+  "iconAuthor": "他不想署名",
+  "iconAsset": "app/src/main/res/drawable-nodpi/app_icon.png",
+  "iconCentered": true,
   "developerEmail": "enota13official@gmail.com",
   "developerEditable": false,
   "developerFiveTapClipboardTested": true,
@@ -132,6 +131,41 @@
   "homePageAlwaysTimetable": true,
   "recoveryVerificationScope": "Recovery code unchanged; current suite validates report access and redaction, not a new fatal/crash pressure injection",
   "testControlTimeoutsExcludedFromPassingResults": true,
-  "successfulRegressionRuns": 2,
-  "assertionCountsAreDistinctNotRepeatedRunTotals": true
+  "successfulRegressionRuns": 0,
+  "assertionCountsAreDistinctNotRepeatedRunTotals": true,
+  "currentAndroidTestPhases": [
+    "design"
+  ],
+  "unchangedBaselineEvidence": {
+    "sourceRef": "v1.0.0",
+    "androidIntegrationAssertions": 216,
+    "androidSourceUiAssertions": 136,
+    "androidProtocolAssertions": 38,
+    "androidRegressionAssertions": 42,
+    "scope": "Protocol, notifications, exams and idle behavior were not changed or rerun in 1.0.1. Their verification remains baseline evidence, not current-run assertions."
+  },
+  "navigationOrderPersistenceAndHomeLaunchEvidence": "v1.0.0 regression; 1.0.1 design verifies order selection and navigation",
+  "iconCenterVerification": {
+    "version": "1.0.1",
+    "apkBytes": 258903,
+    "apkSha256": "EAA78864A2CD33B42BEF588D0CBE3AA753C1AF35F006EDC7072E76A617249C7D",
+    "iconSize": [
+      512,
+      512
+    ],
+    "redBounds": [
+      118,
+      179,
+      395,
+      334
+    ],
+    "centerOffsetPixels": [
+      1.0,
+      1.0
+    ],
+    "packagedIconMatches": true,
+    "oldIconAbsent": true
+  },
+  "settingsAttributionScreenshot": "docs/screenshots/settings-attribution.png",
+  "artifactEvidence": "tests/android/artifact-result.json"
 }
