@@ -8,6 +8,10 @@ public final class CoreTests {
     private static void check(boolean condition,String name){checks++;if(!condition)throw new AssertionError(name);}
     private static void rejects(Runnable operation,String name){boolean rejected=false;try{operation.run();}catch(IllegalArgumentException e){rejected=true;}check(rejected,name);}
     public static void main(String[] args){
+        for(String invalid:new String[]{null,"","0,0,2","1,0","1,0,3","2;0;1"})check(Arrays.equals(AppRules.tabOrder(invalid),new int[]{1,0,2}),"invalid tab order safely uses academic/timetable/settings");
+        for(String option:AppRules.TAB_ORDERS){int[] order=AppRules.tabOrder(option);check((order[0]+","+order[1]+","+order[2]).equals(option)&&order[0]!=order[1]&&order[0]!=order[2]&&order[1]!=order[2],"each permitted order retains all semantic pages");}
+        int[] returned=AppRules.tabOrder(null);returned[0]=9;check(AppRules.tabOrder(null)[0]==1,"caller cannot mutate stored default");
+        check(AppRules.tabLabel(null).equals("教务 — 课表 — 设置"),"default order puts timetable in the center");
         ScheduleCore.Course a=new ScheduleCore.Course("单周课","教师","教室",1,1,2,Arrays.asList(1,3,5));
         ScheduleCore.Course b=new ScheduleCore.Course("冲突课","教师","教室",1,2,3,Arrays.asList(1,2));
         check(a.appears(3)&&!a.appears(2),"odd-week filtering");check(a.overlaps(b),"cross-slot conflict");

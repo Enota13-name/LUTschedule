@@ -1,10 +1,10 @@
 {
   "app": "课间 · LUT",
-  "version": "0.1.9-preview",
-  "versionCode": 10,
-  "apk": "LUT-Schedule-0.1.9-preview.apk",
-  "bytes": 115538,
-  "sha256": "EF748A57D30680B53CA4A3A8A3437D14DC9157C1DB029392E1A70F054F32C2C0",
+  "version": "1.0.0",
+  "versionCode": 11,
+  "apk": "LUT-Schedule-1.0.0.apk",
+  "bytes": 115537,
+  "sha256": "F07027990B4AF7CC7AC069B96A1FB5BFE151C64AA578BFBE7548D2E0B0085501",
   "minAndroid": "8.0",
   "minSdk": 26,
   "targetSdk": 36,
@@ -14,10 +14,9 @@
   "apkSignatureV3": true,
   "signerSha256": "0b959c5671ddda5d9dcec039bf8405c01f5974095ca3c47a119eda9881ee3a1f",
   "sameSigningCertificateAsPreviousVersions": true,
-  "coreChecks": 109,
-  "androidIntegrationAssertions": 180,
-  "androidNewAssertions": 101,
-  "androidRegressionAssertions": 41,
+  "coreChecks": 123,
+  "androidIntegrationAssertions": 216,
+  "androidRegressionAssertions": 42,
   "androidIntegrationResult": "PASS",
   "emulatorAndroid": "15 / API 35",
   "launcherColdStartPassed": true,
@@ -53,16 +52,18 @@
   "idleRule": "First Asia/Shanghai 08:00 at or after last operation + 24h; once per inactivity cycle; cache only",
   "actualIdleExecutionCanBeDeferredByAndroid": true,
   "verifiedWithSyntheticData": [
-    "101 current source/access/layout/attribution Android assertions",
+    "136 source/access/layout/attribution/navigation Android assertions",
     "38 official protocol and direct route assertions",
-    "41 grade/notification/exam/idle/cache/launch regression assertions",
-    "first-use choice without fabricated timetable; old preferences and both-cache migration",
-    "all 23 services disabled in import mode, separate cache and no official idle job",
-    "whole viewport dominant color, uniform native text, shared/split backgrounds and opacity",
-    "independent today frame with no date strip, varied dark course hues",
-    "fixed developer, no single-tap feedback, five taps copy exact email and show AppDialog",
-    "actual two-finger crop/export/no blank edges/cancel preservation",
-    "grade baseline/account isolation/inbox/dedup/top banner/Android notification",
+    "42 grade/notification/exam/idle/cache/launch regression assertions",
+    "six tab permutations, actual dialog selection, semantic page identity and physical background position",
+    "recreation retains custom tab order while launching timetable",
+    "one foreground chosen from all three visible panorama parts, no navigation color flips",
+    "first-use real source choice, migration, separate caches and late response source guard",
+    "all 23 services disabled in import mode and no official idle job",
+    "independent today marker with no date strip, varied dark courses and room on final line",
+    "two-finger crop/export/no blank edges/cancel preservation and course palette preview",
+    "fixed developer, silent single tap, five taps copy exact email and app dialog",
+    "grade baseline/account isolation/inbox/top banner/Android notification and dedup",
     "precise dated exams, persisted one-shot silent idle job and theme recreation"
   ],
   "limitations": [
@@ -81,7 +82,7 @@
   "reportRedactionChecks": 7,
   "androidProtocolAssertions": 38,
   "repository": "https://github.com/Enota13-name/LUTschedule",
-  "sourceRef": "release/0.1.9-preview",
+  "sourceRef": "v1.0.0",
   "repositoryPrivateKeyIncluded": false,
   "backgroundLayoutModes": [
     "shared",
@@ -93,8 +94,6 @@
   "systemPermissionAndPickerOwnedByAndroid": true,
   "diagnosticSchema": "LUTSCHEDULE_ERROR_REPORT_V1",
   "diagnosticReportAutoUpload": false,
-  "diagnosticRecoveryOnNextLaunchTested": true,
-  "previewInteractionChecksPassed": true,
   "developer": "Enota13",
   "developerEmail": "enota13official@gmail.com",
   "developerEditable": false,
@@ -108,7 +107,10 @@
   "importAcademicServicesDisabled": 23,
   "importOfficialRefreshDisabled": true,
   "lateBackgroundResponseSourceGuardTested": true,
-  "dominantForegroundSampleSize": 6144,
+  "dominantForegroundSampleSize": {
+    "shared": 2048,
+    "split": 6144
+  },
   "dateHeaderConnectedBacking": false,
   "roomNumberFinalLine": true,
   "darkCourseColors": [
@@ -118,5 +120,18 @@
     "dark purple",
     "dark red"
   ],
-  "diagnosticRecoveryOnNextLaunchTestedIn": "release/0.1.8-preview (unchanged recovery code)"
+  "androidSourceUiAssertions": 136,
+  "oneForegroundAcrossAllThreePages": true,
+  "defaultNavigationOrder": [
+    "academic",
+    "timetable",
+    "settings"
+  ],
+  "navigationOrderPermutationsTested": 6,
+  "navigationOrderPersistenceAndHomeLaunchTested": true,
+  "homePageAlwaysTimetable": true,
+  "recoveryVerificationScope": "Recovery code unchanged; current suite validates report access and redaction, not a new fatal/crash pressure injection",
+  "testControlTimeoutsExcludedFromPassingResults": true,
+  "successfulRegressionRuns": 2,
+  "assertionCountsAreDistinctNotRepeatedRunTotals": true
 }

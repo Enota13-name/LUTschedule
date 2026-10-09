@@ -1,7 +1,0 @@
-Starting: Intent { cmp=cn.lut.schedule/.BootstrapActivity }
-Status: ok
-LaunchState: COLD
-Activity: cn.lut.schedule/.MainActivity
-TotalTime: 973
-WaitTime: 982
-Complete

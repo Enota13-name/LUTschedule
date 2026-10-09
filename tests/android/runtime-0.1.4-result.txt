@@ -1,2 +1,0 @@
-INSTRUMENTATION_RESULT: result=PASS: login connection error UI, provider/version and sanitized diagnostics; main-frame load/HTTP/blocked-host callbacks; subresource and stale callback isolation; failed pages skip reader; EMAP and DOM fixtures; SQLite/cache preservation; startup, tabs, removed headings, dark recreation
-INSTRUMENTATION_CODE: -1

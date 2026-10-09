@@ -1,2 +1,0 @@
-INSTRUMENTATION_RESULT: result=PASS: 42 v018 assertions: actual pinch gesture, panorama crop/export/atomic save/cancel, shared and split backgrounds on three tabs, transitions, custom palette live example, uniform date foreground, flat settings, bounded and redacted error reports, source links, popup/navigation/clipboard and fatal recovery markers
-INSTRUMENTATION_CODE: -1

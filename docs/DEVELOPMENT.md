@@ -1,0 +1,25 @@
+# 正式版构建与验证
+
+版本 1.0.0，versionCode 11，源码标识 v1.0.0。原生 Java，minSdk 26 / targetSdk 36 / compileSdk 37，无第三方运行时。
+
+## 离线构建
+
+需要本机 JDK、Android SDK build-tools 36.0.0 和平台 android-37.0（或 android-37）。脚本不会下载 Gradle；Gradle 配置保留，但本次交付使用离线脚本。
+
+```powershell
+.uild-offline.ps1 -JdkPath '本机JDK路径' -SdkPath "$env:LOCALAPPDATA\Android\Sdk"
+```
+
+APK 输出到项目父目录。交付包沿用原签名以支持覆盖安装，签名证书摘要记录在 verification.json；私钥不入仓库。公开源码首次本地构建会生成自己的本地测试签名，它不能覆盖不同签名的安装包。请妥善离线保管自己的签名密钥。
+
+## 当前验证
+
+构建执行核心规则与报告脱敏检查；Android 原生集成测试分别覆盖来源与界面、官网协议、通知/缓存/后台回归。运行与结果见 [../tests/android/README.md](../tests/android/README.md) 和 [../verification.json](../verification.json)。截图全部来自自有模拟器和合成导入数据，不包含真实学校账号或学生记录。
+
+模拟器检查不能覆盖小米 15 Pro 的所有系统限制。App 内真实官网账号全量同步、所有 23 项业务内部流程、真实手机重启和后台早八时效仍需实机验收。浏览器已只读核对官网目录与核心接口，详细映射见 [../教务目录映射.md](../教务目录映射.md)。
+
+## 维护
+
+读 [../AGENTS.md](../AGENTS.md) 与 [FINAL_PROMPT.md](FINAL_PROMPT.md)。页面 ID 固定为课表 0、教务 1、设置 2，底栏位置从设置映射，不能拿按钮位置当页面身份。三份背景整体取色，前景缓存不依赖当前页。App 自有弹窗用 AppDialog；系统权限和文件选择器不自行仿造。
+
+切换学校账号前清除数据并退出，当前课表缓存没有完整账号隔离。自动同步仅限适配的只读数据，网站改版时宁可保留缓存并报告识别失败，不猜数据、不绕过认证或证书。当前目录仅保留正式版交付文件，Git 提交历史保留以便恢复。

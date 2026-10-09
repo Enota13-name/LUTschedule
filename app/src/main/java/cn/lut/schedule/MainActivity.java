@@ -124,7 +124,7 @@ public final class MainActivity extends Activity {
     private void space(LinearLayout l,int height){View v=new View(this);l.addView(v,new LinearLayout.LayoutParams(1,dp(height)));}
     private TextView action(String label,Runnable callback){TextView t=text(label,14,accent);t.setGravity(Gravity.CENTER);t.setPadding(dp(14),dp(13),dp(14),dp(13));clickable(t,Color.TRANSPARENT);t.setOnClickListener(v->{developerTaps=0;callback.run();});return t;}
     private void buildRoot(){
-        colors();root=vertical();backgroundPage=page;root.setBackground(new Wallpaper());
+        colors();root=vertical();backgroundPage=tabPosition(page);root.setBackground(new Wallpaper());
         if(android.os.Build.VERSION.SDK_INT>=30){getWindow().setDecorFitsSystemWindows(false);
             root.setOnApplyWindowInsetsListener((v,insets)->{android.graphics.Insets b=insets.getInsets(WindowInsets.Type.systemBars());v.setPadding(b.left,b.top,b.right,b.bottom);return insets;});
         }
@@ -137,7 +137,7 @@ public final class MainActivity extends Activity {
         gateway=new SiteGateway(this,probeHost);coordinator=new SyncCoordinator(this,probeHost,gateway);setContentView(root);renderPage(false);
         root.post(this::adaptForeground);
     }
-    private void navigate(int next){developerTaps=0;if(next==page)return;int previous=page;float from=backgroundPage;page=next;ErrorReports.breadcrumb(this,"切换页面："+new String[]{"课表","教务","设置"}[next]);renderPage(true);if(backgroundAnimator!=null)backgroundAnimator.cancel();if(animationsEnabled()){View child=pages.getChildAt(0);child.setTranslationX(dp(next>previous?10:-10));child.animate().translationX(0).setDuration(180).setInterpolator(new DecelerateInterpolator()).start();backgroundAnimator=android.animation.ValueAnimator.ofFloat(from,next);backgroundAnimator.setDuration(240);backgroundAnimator.setInterpolator(new DecelerateInterpolator());backgroundAnimator.addUpdateListener(a->{backgroundPage=(Float)a.getAnimatedValue();transitionAlpha=prefs.getString("background_layout","shared").equals("split")?0:Math.round(24*(float)Math.sin(Math.PI*a.getAnimatedFraction()));root.invalidate();});backgroundAnimator.addListener(new android.animation.AnimatorListenerAdapter(){public void onAnimationEnd(android.animation.Animator a){backgroundPage=page;transitionAlpha=0;root.invalidate();adaptForeground();}});backgroundAnimator.start();}else{backgroundPage=next;transitionAlpha=0;root.invalidate();adaptForeground();}}
+    private void navigate(int next){developerTaps=0;if(next==page)return;int previous=tabPosition(page);float from=backgroundPage;page=next;int target=tabPosition(next);ErrorReports.breadcrumb(this,"切换页面："+new String[]{"课表","教务","设置"}[next]);renderPage(true);if(backgroundAnimator!=null)backgroundAnimator.cancel();if(animationsEnabled()){View child=pages.getChildAt(0);child.setTranslationX(dp(target>previous?10:-10));child.animate().translationX(0).setDuration(180).setInterpolator(new DecelerateInterpolator()).start();backgroundAnimator=android.animation.ValueAnimator.ofFloat(from,target);backgroundAnimator.setDuration(240);backgroundAnimator.setInterpolator(new DecelerateInterpolator());backgroundAnimator.addUpdateListener(a->{backgroundPage=(Float)a.getAnimatedValue();transitionAlpha=prefs.getString("background_layout","shared").equals("split")?0:Math.round(24*(float)Math.sin(Math.PI*a.getAnimatedFraction()));root.invalidate();});backgroundAnimator.addListener(new android.animation.AnimatorListenerAdapter(){public void onAnimationEnd(android.animation.Animator a){backgroundPage=tabPosition(page);transitionAlpha=0;root.invalidate();adaptForeground();}});backgroundAnimator.start();}else{backgroundPage=target;transitionAlpha=0;root.invalidate();adaptForeground();}}
     private void renderPage(boolean animate){
         adaptiveViews.clear();developerRow=null;pages.removeAllViews();timetable=null;statusText=null;statusIcon=null;
         root.setBackground(new Wallpaper());nav.setBackgroundColor(Color.TRANSPARENT);updateScreenForeground();refreshBanner();
@@ -145,7 +145,7 @@ public final class MainActivity extends Activity {
         if(animate && animationsEnabled()){child.setAlpha(0);child.animate().alpha(1).setDuration(180).setInterpolator(new DecelerateInterpolator()).start();}
         else child.setAlpha(1);
         nav.removeAllViews();String[] labels={"课表","教务","设置"};
-        for(int i=0;i<3;i++){final int next=i;LinearLayout item=vertical();item.setGravity(Gravity.CENTER);clickable(item,Color.TRANSPARENT);
+        int[] order=AppRules.tabOrder(prefs.getString("tab_order",null));for(int slot=0;slot<3;slot++){final int i=order[slot],next=i;LinearLayout item=vertical();item.setGravity(Gravity.CENTER);clickable(item,Color.TRANSPARENT);
             NavIcon icon=new NavIcon(i,i==page);item.addView(icon,new LinearLayout.LayoutParams(dp(23),dp(23)));space(item,5);
             TextView label=text(labels[i],12,i==page?accent:muted);label.setGravity(Gravity.CENTER);item.addView(label);item.setContentDescription(labels[i]);item.setOnClickListener(v->navigate(next));
             adaptiveViews.add(icon);adaptiveViews.add(label);if(i==page){label.setTypeface(Typeface.DEFAULT_BOLD);}
@@ -343,6 +343,7 @@ public final class MainActivity extends Activity {
         setting(content,"课程颜色",prefs.getString("course_colors","varied").equals("solid")?"纯色 · 自选色盘":"随机多色 · 同一课程保持同色",this::chooseCourseColors);
         setting(content,"恢复默认背景","使用纯色背景",()->{File file=new File(getFilesDir(),"background.jpg");if(file.exists()&&!file.delete()){toast("背景删除失败");return;}prefs.edit().putString("background_layout","shared").apply();loadBackground();renderPage(false);toast("已恢复默认背景");});
         group(content,"课表与操作");
+        setting(content,"底栏顺序",AppRules.tabLabel(prefs.getString("tab_order",null)),this::chooseTabOrder);
         setting(content,"周数按钮位置",prefs.getString("week_side","right").equals("left")?"左下角":"右下角",()->new AppDialog.Builder(this).setTitle("周数按钮位置").setItems(new String[]{"左下角","右下角"},(d,w)->{prefs.edit().putString("week_side",w==0?"left":"right").apply();renderPage(false);}).show());
         setting(content,"考试日程","在课表对应日期显示考试时间和地点",()->explain("考试日程","同步成功后，考试会显示在课表对应日期下方，标出精确起止时间。没有学校节次时间表时，不猜测考试对应第几节。点击考试可以查看完整信息。"));
         setting(content,"学期起始日期",prefs.getString("first_monday","").isEmpty()?"优先从官网校历自动获取；可手动校正":prefs.getString("first_monday",""),()->chooseFirstMonday(()->renderPage(false)));
@@ -357,7 +358,7 @@ public final class MainActivity extends Activity {
         setting(content,"清除数据并退出账号","清除课程、成绩、考试、未读消息和官网会话",()->new AppDialog.Builder(this).setTitle("清除数据并退出？").setMessage("保留风格与背景设置。再次登录后会建立新的成绩基线。").setPositiveButton("清除并退出",(d,w)->logout()).setNegativeButton("取消",null).show());
         group(content,"关于与排查");
         developerSetting(content);
-        setting(content,"使用声明","非官方应用 · 不可商用 · 0.1.9-preview",()->explain("使用声明","用于个人非商业学习与课表查看。开发者：Enota13。官网网页登录会话仅保存在本机，项目不自动上传教务数据或错误报告。"));
+        setting(content,"使用声明","非官方应用 · 不可商用 · 1.0.0",()->explain("使用声明","用于个人非商业学习与课表查看。开发者：Enota13。官网网页登录会话仅保存在本机，项目不自动上传教务数据或错误报告。"));
         setting(content,"项目仓库","github.com/Enota13-name/LUTschedule",()->{try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(BuildInfo.REPOSITORY)));}catch(Exception e){Diagnostics.record(this,"打开项目仓库",e,false);}});
         group(content,"错误报告");
         setting(content,"复制错误报告",Diagnostics.last(this).isEmpty()?"设备、版本、源码链接与排查指引":"已记录错误 · 复制后交给 AI 排查",this::showErrorReport);
@@ -368,6 +369,9 @@ return scroll;
     private void notificationPermission(){new AppDialog.Builder(this).setTitle("新成绩通知权限").setMessage("POST_NOTIFICATIONS 用于发现新成绩后发送 Android 消息。顶部提示不依赖这项权限。\n\n后台 08:00 更新只保存缓存，下次打开 App 才提醒。通知不在锁屏直接展示课程成绩。"+(GradeNotifications.allowed(this)?"\n\n当前已允许通知。":"\n\n当前系统通知未允许。" )).setPositiveButton(GradeNotifications.allowed(this)?"通知系统设置":"允许通知",(d,w)->{IdleRefresh.operated(this);if(android.os.Build.VERSION.SDK_INT>=33&&checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED&&!prefs.getBoolean("notification_requested",false))requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS},71);else{Intent i=new Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS);i.putExtra(android.provider.Settings.EXTRA_APP_PACKAGE,getPackageName());try{startActivity(i);}catch(Exception e){openSystemSettings();}}}).setNegativeButton("暂不开启",null).show();}
     public void onRequestPermissionsResult(int code,String[] permissions,int[] results){super.onRequestPermissionsResult(code,permissions,results);if(code==71){prefs.edit().putBoolean("notification_requested",true).apply();if(foreground)GradeNotifications.deliver(this,pendingChanges);renderPage(false);}}
     private void openSystemSettings(){try{startActivity(new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+getPackageName())));}catch(Exception e){toast("无法打开系统设置");}}
+    private int tabPosition(int id){int[] order=AppRules.tabOrder(prefs.getString("tab_order",null));for(int slot=0;slot<3;slot++)if(order[slot]==id)return slot;return 1;}
+    private void applyTabOrder(String order){if(backgroundAnimator!=null)backgroundAnimator.cancel();prefs.edit().putString("tab_order",order).apply();backgroundPage=tabPosition(page);transitionAlpha=0;renderPage(false);root.invalidate();}
+    private AppDialog chooseTabOrder(){String[] labels=new String[AppRules.TAB_ORDERS.length];int selected=0;String stored=prefs.getString("tab_order",AppRules.TAB_ORDERS[0]);for(int i=0;i<labels.length;i++){labels[i]=AppRules.tabLabel(AppRules.TAB_ORDERS[i]);if(AppRules.TAB_ORDERS[i].equals(stored))selected=i;}return new AppDialog.Builder(this).setTitle("底栏顺序").setSingleChoiceItems(labels,selected,(d,w)->{d.dismiss();applyTabOrder(AppRules.TAB_ORDERS[w]);}).setNegativeButton("关闭",null).show();}
     private void chooseCourseColors(){new AppDialog.Builder(this).setTitle("课程配色").setItems(new String[]{"随机多色 · 课程颜色保持稳定","纯色 · 从色盘选择"},(d,w)->{if(w==0){prefs.edit().putString("course_colors","varied").apply();renderPage(false);}else chooseSolidColor();}).show();}
     private AppDialog chooseSolidColor(){
         LinearLayout body=vertical(),top=row();body.setPadding(0,dp(8),0,dp(8));ColorWheel wheel=new ColorWheel(prefs.getInt("solid_color",0xFFC9DDD1));top.addView(wheel,new LinearLayout.LayoutParams(0,dp(190),1));TextView example=text("高等数学\n1–2节\nA201",13,ink);example.setTypeface(Typeface.DEFAULT_BOLD);example.setGravity(Gravity.TOP);example.setPadding(dp(10),dp(14),dp(8),dp(8));LinearLayout.LayoutParams sample=new LinearLayout.LayoutParams(dp(86),dp(122));sample.leftMargin=dp(12);top.addView(example,sample);body.addView(top);
@@ -427,12 +431,16 @@ return scroll;
     int screenForeground(){return screenForeground;}
     private int buttonColor(View view){return screenForeground;}
     private void updateScreenForeground(){
-        if(root==null)return;String key=page+":"+root.getWidth()+":"+root.getHeight()+":"+veilAlpha()+":"+dark+":"+prefs.getString("background_layout","shared");
+        if(root==null)return;String key=root.getWidth()+":"+root.getHeight()+":"+veilAlpha()+":"+dark+":"+prefs.getString("background_layout","shared");
         if(key.equals(foregroundKey))return;
         int dominant=base;
         if(background!=null&&!background.isRecycled()&&root.getWidth()>0&&root.getHeight()>0){
-            float previous=backgroundPage;backgroundPage=page;RectF r=wallpaperRect();backgroundPage=previous;float scale=r.width()/background.getWidth();int[] samples=new int[64*96];
-            for(int y=0;y<96;y++)for(int x=0;x<64;x++){int bx=Math.max(0,Math.min(background.getWidth()-1,(int)((root.getWidth()*(x+.5f)/64-r.left)/scale))),by=Math.max(0,Math.min(background.getHeight()-1,(int)((root.getHeight()*(y+.5f)/96-r.top)/scale)));samples[y*64+x]=AppRules.composite(base,background.getPixel(bx,by),veilAlpha());}
+            // Sample each displayed panorama part equally; navigation never changes the chosen foreground.
+            int parts=prefs.getString("background_layout","shared").equals("split")?3:1;
+            int[] samples=new int[parts*32*64];float previous=backgroundPage;
+            try{for(int part=0;part<parts;part++){backgroundPage=part;RectF r=wallpaperRect();float scale=r.width()/background.getWidth();
+                for(int y=0;y<64;y++)for(int x=0;x<32;x++){int bx=Math.max(0,Math.min(background.getWidth()-1,(int)((root.getWidth()*(x+.5f)/32-r.left)/scale))),by=Math.max(0,Math.min(background.getHeight()-1,(int)((root.getHeight()*(y+.5f)/64-r.top)/scale)));samples[part*32*64+y*32+x]=AppRules.composite(base,background.getPixel(bx,by),veilAlpha());}
+            }}finally{backgroundPage=previous;}
             dominant=AppRules.dominant(samples);
         }
         screenForeground=AppRules.foreground(dominant);ink=muted=accent=screenForeground;foregroundKey=key;

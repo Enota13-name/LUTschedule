@@ -1,5 +1,0 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="cn.lut.schedule.tests">
-    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="36" />
-    <application android:label="LUT Runtime Smoke" />
-    <instrumentation android:name=".RuntimeSmoke" android:targetPackage="cn.lut.schedule" />
-</manifest>

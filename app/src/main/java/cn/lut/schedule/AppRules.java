@@ -7,6 +7,13 @@ import java.time.ZonedDateTime;
 /** Rules shared by the screen and the one-shot idle job. No Android dependencies. */
 public final class AppRules {
     public static final ZoneId SCHOOL=ZoneId.of("Asia/Shanghai");
+    public static final String[] TAB_ORDERS={"1,0,2","0,1,2","1,2,0","0,2,1","2,1,0","2,0,1"};
+    /** Page IDs are semantic: timetable 0, academic 1, settings 2. Invalid storage falls back safely. */
+    public static int[] tabOrder(String stored){
+        String valid=TAB_ORDERS[0];for(String option:TAB_ORDERS)if(option.equals(stored)){valid=option;break;}
+        return new int[]{valid.charAt(0)-'0',valid.charAt(2)-'0',valid.charAt(4)-'0'};
+    }
+    public static String tabLabel(String stored){int[] order=tabOrder(stored);String[] names={"课表","教务","设置"};return names[order[0]]+" — "+names[order[1]]+" — "+names[order[2]];}
     public static long idleTarget(long lastOperation){
         ZonedDateTime eligible=Instant.ofEpochMilli(lastOperation).atZone(SCHOOL).plusHours(24);
         ZonedDateTime morning=eligible.toLocalDate().atTime(8,0).atZone(SCHOOL);
