@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="390" viewBox="0 0 1280 390" role="img" aria-labelledby="title desc">
+  <title id="title">LUTschedule · 课间 LUT</title>
+  <desc id="desc">深色背景上的项目名称和标语，一侧以抽象课程块表现一周的安排。</desc>
+  <defs>
+    <linearGradient id="base" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#15171c"/>
+      <stop offset="1" stop-color="#252932"/>
+    </linearGradient>
+    <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".08"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="390" fill="url(#base)"/>
+  <path d="M0 389H1280" stroke="#5b6170" stroke-opacity=".5"/>
+  <g font-family="Inter,Segoe UI,Microsoft YaHei,Noto Sans CJK SC,sans-serif">
+    <text x="68" y="64" font-size="15" fill="#afb5c2" letter-spacing="2">ENOTA13 / ANDROID</text>
+    <text x="64" y="171" font-size="78" font-weight="600" fill="#f4f1ea" letter-spacing="-3">LUTschedule</text>
+    <text x="69" y="233" font-size="31" fill="#d9d7d1">一眼看清一周。</text>
+    <text x="70" y="319" font-size="17" fill="#aeb4c0">课间 · LUT</text>
+    <path d="M191 306V321" stroke="#5c6370"/>
+    <text x="211" y="319" font-size="15" fill="#aeb4c0" letter-spacing="1">1.0.0</text>
+    <g transform="translate(756 62)">
+      <rect x="0" y="0" width="454" height="268" fill="url(#fade)"/>
+      <g font-size="12" fill="#bdc3ce" text-anchor="middle" letter-spacing="1">
+        <text x="43" y="28">MON</text>
+        <text x="117" y="28">TUE</text>
+        <text x="191" y="28" fill="#f4f1ea">WED</text>
+        <text x="265" y="28">THU</text>
+        <text x="339" y="28">FRI</text>
+        <text x="413" y="28">SAT</text>
+      </g>
+      <path d="M177 39H205" stroke="#e3cfac" stroke-width="2"/>
+      <g stroke="#9da5b4" stroke-opacity=".25" stroke-width="1">
+        <path d="M6 50H448M6 255H448"/>
+      </g>
+      <g>
+        <rect x="13" y="64" width="60" height="87" fill="#a9bdd2"/>
+        <rect x="87" y="107" width="60" height="101" fill="#c3b4cf"/>
+        <rect x="161" y="64" width="60" height="126" fill="#e3cfac"/>
+        <rect x="235" y="158" width="60" height="79" fill="#abbfba"/>
+        <rect x="309" y="83" width="60" height="100" fill="#b6bfd2"/>
+        <rect x="383" y="200" width="60" height="37" fill="#c7b8ab"/>
+      </g>
+      <g stroke="#19212b" stroke-opacity=".32" stroke-width="3">
+        <path d="M25 81H58M25 90H48M99 124H132M99 133H119M173 82H206M173 91H195M247 175H280M247 184H267M321 100H354M321 109H341M395 217H428"/>
+      </g>
+    </g>
+  </g>
+</svg>
