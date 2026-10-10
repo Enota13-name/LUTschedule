@@ -1,0 +1,69 @@
+{
+  "scope": "synthetic harness only; no live network, no production changes, and no Android UI frame measurement",
+  "production_source_sha256": "1d62ba34156803fdb17afb582eba513663acd90ee8a10489d1eb020e890ca53a",
+  "dependencies_ms": {
+    "timetable": 1000,
+    "grades": 3000,
+    "exams": 4000,
+    "each_auxiliary_module": 2000
+  },
+  "checks": {
+    "old_waits_for_all_modules": true,
+    "prototype_ready_after_persist": true,
+    "prototype_preserves_total_end_time": true,
+    "later_failure_does_not_revoke_ready": true,
+    "save_failure_emits_no_ready": true,
+    "cancelled_ticket_emits_no_callback": true
+  },
+  "results": [
+    {
+      "scenario": "normal",
+      "variant": "production",
+      "timetable_saved_ms": 1000,
+      "ready_callback_ms": null,
+      "final_callback_ms": 18000,
+      "post_save_wait_ms": 17000,
+      "status": "SUCCESS"
+    },
+    {
+      "scenario": "normal",
+      "variant": "isolated_prototype",
+      "timetable_saved_ms": 1000,
+      "ready_callback_ms": 1000,
+      "final_callback_ms": 18000,
+      "post_save_wait_ms": 17000,
+      "status": "SUCCESS",
+      "ready_survived_later_failure": false
+    },
+    {
+      "scenario": "later_module_failure",
+      "variant": "isolated_prototype",
+      "timetable_saved_ms": 1000,
+      "ready_callback_ms": 1000,
+      "final_callback_ms": 18000,
+      "post_save_wait_ms": 17000,
+      "status": "ADAPTER_PENDING",
+      "ready_survived_later_failure": true
+    },
+    {
+      "scenario": "timetable_save_failure",
+      "variant": "isolated_prototype",
+      "timetable_saved_ms": null,
+      "ready_callback_ms": null,
+      "final_callback_ms": 18000,
+      "post_save_wait_ms": null,
+      "status": "ADAPTER_PENDING",
+      "ready_survived_later_failure": false
+    },
+    {
+      "scenario": "cancelled_old_ticket",
+      "variant": "isolated_prototype",
+      "timetable_saved_ms": null,
+      "ready_callback_ms": null,
+      "final_callback_ms": null,
+      "post_save_wait_ms": null,
+      "status": "null",
+      "ready_survived_later_failure": false
+    }
+  ]
+}

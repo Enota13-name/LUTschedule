@@ -1,4 +1,5 @@
 /.gradle/
+/work/
 /local.properties
 **/build/
 **/runtime-test-build/
