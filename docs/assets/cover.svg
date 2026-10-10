@@ -19,7 +19,7 @@
     <text x="69" y="233" font-size="31" fill="#d9d7d1">一眼看清一周。</text>
     <text x="70" y="319" font-size="17" fill="#aeb4c0">LUTschedule</text>
     <path d="M191 306V321" stroke="#5c6370"/>
-    <text x="211" y="319" font-size="15" fill="#aeb4c0" letter-spacing="1">正式版 1.0.1</text>
+    <text x="211" y="319" font-size="15" fill="#aeb4c0" letter-spacing="1">正式版 1.0.2</text>
     <g transform="translate(756 62)">
       <rect x="0" y="0" width="454" height="268" fill="url(#fade)"/>
       <g font-size="12" fill="#bdc3ce" text-anchor="middle" letter-spacing="1">

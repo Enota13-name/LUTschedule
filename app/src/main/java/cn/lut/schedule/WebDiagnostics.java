@@ -22,7 +22,7 @@ final class WebDiagnostics {
     static String record(Context c,String stage,String url,String reason,int code){
         String origin="未知";try{Uri u=Uri.parse(url==null?"":url);if(u.getHost()!=null)origin=u.getScheme()+"://"+u.getHost()+(u.getPort()==-1?"":":"+u.getPort());}catch(RuntimeException ignored){}
         String report="LUT 官网连接元数据\n阶段："+ReportRedactor.clean(stage)+"\n目标主机："+origin+"\n原因："+ReportRedactor.clean(reason)+"\n错误代码："+code+"\nWebView："+provider()+"\nAndroid："+Build.VERSION.RELEASE+" / API "+Build.VERSION.SDK_INT+"\n记录时间："+java.time.Instant.now().atZone(java.time.ZoneId.of("Asia/Shanghai"))+"\n不含账号、密码、Cookie、网址参数或页面内容。";
-        c.getSharedPreferences("diagnostics",Context.MODE_PRIVATE).edit().putString("web",report).apply();if(!stage.equals("页面载入"))Diagnostics.event(c,stage,reason+" (code="+code+", host="+origin+")");return report;
+        c.getSharedPreferences("diagnostics",Context.MODE_PRIVATE).edit().putString("web",report).apply();if(!stage.equals("页面载入"))Diagnostics.operational(c,stage,reason+" (code="+code+", host="+origin+")");return report;
     }
     static String last(Context c){return c.getSharedPreferences("diagnostics",Context.MODE_PRIVATE).getString("web","");}
 }

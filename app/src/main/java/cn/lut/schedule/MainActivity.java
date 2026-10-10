@@ -68,6 +68,13 @@ public final class MainActivity extends Activity {
     private SiteGateway gateway;
     private SyncCoordinator coordinator;
     private AcademicStore academicStore;
+    private CredentialVault credentialVault;
+    private final OfficialLogin officialLogin=new OfficialLogin();
+    private final java.util.concurrent.ExecutorService credentialExecutor=java.util.concurrent.Executors.newSingleThreadExecutor();
+    private AppDialog credentialDialog,credentialIntro,credentialOptions;
+    private boolean credentialLoading,courseReadyThisRun;
+    private int syncRequestId;
+    private ScheduleCore.Status completeStatus=ScheduleCore.Status.IDLE;
     private JSONArray pendingChanges=new JSONArray(),examRecords=new JSONArray();
     private LinearLayout gradeBanner;
     private final List<View> adaptiveViews=new ArrayList<>();
@@ -108,8 +115,9 @@ public final class MainActivity extends Activity {
         try {
             prefs=getSharedPreferences("settings",MODE_PRIVATE);dark=isDark();
             setTheme(AppDialog.theme(this,dark));
-            store=new SnapshotStore(this);AccessMode.migrate(prefs,store);academicStore=new AcademicStore(this);loadAcademic();loadSnapshot();loadBackground();buildRoot();initialized=true;Diagnostics.clearFatal(this);if(state==null&&(getIntent().getBooleanExtra("user_launch",false)||prefs.getLong("last_operation",0)==0))IdleRefresh.operated(this);
+            store=new SnapshotStore(this);AccessMode.migrate(prefs,store);academicStore=new AcademicStore(this);credentialVault=new CredentialVault(this);loadAcademic();loadSnapshot();loadBackground();buildRoot();initialized=true;Diagnostics.clearFatal(this);if(state==null&&(getIntent().getBooleanExtra("user_launch",false)||prefs.getLong("last_operation",0)==0))IdleRefresh.operated(this);
             if(AccessMode.official(this))handler.postDelayed(this::refresh,400);if(snapshot!=null&&!prefs.contains("handedness"))handler.postDelayed(this::firstHandedness,300);
+            handler.postDelayed(this::offerCredentialNotice,650);
         } catch(RuntimeException | LinkageError error){Diagnostics.record(this,"课表启动",error,true);Diagnostics.showRecovery(this);}
     }
     private boolean isDark(){String mode=prefs.getString("theme","light");return mode.equals("dark") || mode.equals("system") && (getResources().getConfiguration().uiMode&Configuration.UI_MODE_NIGHT_MASK)==Configuration.UI_MODE_NIGHT_YES;}
@@ -193,8 +201,8 @@ public final class MainActivity extends Activity {
 
     private String statusSummary(){if(AccessMode.IMPORT.equals(prefs.getString("entry_mode",AccessMode.NONE)))return "本地导入课表 · 不连接教务系统";switch(sync.status()){
         case UPDATING:return "正在连接教务系统，当前课表可继续查看…";
-        case SUCCESS:return "✓ 教务信息已更新";
-        case LOGIN_REQUIRED:return "登录已失效，请重新登录；保留已有课表";
+        case SUCCESS:return coordinator!=null&&coordinator.isRunning()?"✓ 课表已更新 · 其他教务正在更新":"✓ 课表已更新";
+        case LOGIN_REQUIRED:return "官网需要登录，已保留已有课表";
         case OFFLINE:return snapshot==null?"网络未连接，尚无缓存课表":"网络未连接，正在显示缓存课表";
         case SERVER_ERROR:return snapshot==null?"教务系统暂时故障，尚无缓存课表":"教务系统暂时故障，正在显示缓存课表";
         case UNREACHABLE:return snapshot==null?"暂时无法连接教务系统，尚无缓存":"暂时无法连接教务系统，正在显示缓存课表";
@@ -203,17 +211,24 @@ public final class MainActivity extends Activity {
         default:return "尚未完成本次官网同步";
     }}
     private void updateStatus(){if(statusText!=null)statusText.setText(statusSummary());if(statusIcon!=null)statusIcon.invalidate();}
-    private void showStatus(){if(!AccessMode.official(this)){explain("最近更新日期",snapshot==null?"尚未登录或导入课表":("本地课表导入时间：\n"+formatTime(snapshot.fetchedAt)+"\n\n官网服务仅为 LUT 学生提供；本地导入不进行官网同步。"));return;}new AppDialog.Builder(this).setTitle("最近更新日期").setMessage("最近完整更新：\n"+formatTime(prefs.getLong("last_full_success",0))+"\n\n最近尝试：\n"+formatTime(prefs.getLong("last_attempt",0))+"\n\n课表："+formatTime(prefs.getLong("timetable_updated",snapshot!=null&&snapshot.source==ScheduleCore.Source.OFFICIAL?snapshot.fetchedAt:0))+"\n成绩："+formatTime(prefs.getLong("grades_updated",0))+"\n考试："+formatTime(prefs.getLong("exams_updated",0))+"\n\n"+detail+"\n\n对号表示本次课表、成绩、考试均完成读取和保存；失败不会清除缓存。").setPositiveButton("关闭",null).setNeutralButton("立即刷新",(d,w)->{IdleRefresh.operated(this);refresh();}).show();}
+    private void showStatus(){if(!AccessMode.official(this)){explain("最近更新日期",snapshot==null?"尚未登录或导入课表":("本地课表导入时间：\n"+formatTime(snapshot.fetchedAt)+"\n\n官网服务仅为 LUT 学生提供；本地导入不进行官网同步。"));return;}new AppDialog.Builder(this).setTitle("最近更新日期").setMessage("最近课表更新：\n"+formatTime(prefs.getLong("timetable_updated",snapshot!=null&&snapshot.source==ScheduleCore.Source.OFFICIAL?snapshot.fetchedAt:0))+"\n\n最近完整更新：\n"+formatTime(prefs.getLong("last_full_success",0))+"\n\n最近尝试：\n"+formatTime(prefs.getLong("last_attempt",0))+"\n\n成绩："+formatTime(prefs.getLong("grades_updated",0))+"\n考试："+formatTime(prefs.getLong("exams_updated",0))+"\n\n"+detail+"\n\n对号表示本轮课表已校验并保存。成绩、考试及其他教务随后更新，分别保留成功时间；后续失败不撤回课表对号。失败不会清除缓存。"+(coordinator!=null&&coordinator.isRunning()?"\n\n后续查询仍在执行。":"")).setPositiveButton("关闭",null).setNeutralButton("立即刷新",(d,w)->{IdleRefresh.operated(this);refresh();}).show();}
 
     private String formatTime(long time){return time<=0?"无":java.time.Instant.ofEpochMilli(time).atZone(SCHOOL_TIME).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))+"（北京时间）";}
     private void changeWeek(int delta){if(snapshot!=null){week=Math.max(1,Math.min(availableWeeks(),week+delta));renderPage(false);}}
     private void setCurrentWeek(){if(snapshot!=null)week=Math.max(1,Math.min(availableWeeks(),snapshot.weekOf(LocalDate.now(SCHOOL_TIME))));}
     private void loadSnapshot(){String mode=prefs.getString("entry_mode",AccessMode.NONE);snapshot=mode.equals(AccessMode.OFFICIAL)?store.load(ScheduleCore.Source.OFFICIAL):mode.equals(AccessMode.IMPORT)?store.load(ScheduleCore.Source.IMPORT):null;setCurrentWeek();}
     private void refresh(){
-        if(!alive||!initialized||!AccessMode.official(this)||sync.status()==ScheduleCore.Status.UPDATING)return;ErrorReports.breadcrumb(this,"开始更新课表、成绩和考试");int ticket=sync.begin();detail="正在更新课表、成绩和考试";prefs.edit().putLong("last_attempt",System.currentTimeMillis()).apply();updateStatus();
+        if(!alive||!foreground||!initialized||!AccessMode.official(this)||loginDialog!=null||coordinator.isRunning())return;ErrorReports.breadcrumb(this,"开始更新课表，随后更新成绩和考试");final int request=++syncRequestId;final int ticket=sync.begin();courseReadyThisRun=false;completeStatus=ScheduleCore.Status.UPDATING;detail="正在优先读取课表";prefs.edit().putLong("last_attempt",System.currentTimeMillis()).apply();updateStatus();
         ConnectivityManager cm=(ConnectivityManager)getSystemService(CONNECTIVITY_SERVICE);NetworkCapabilities caps=null;try{if(cm!=null)caps=cm.getNetworkCapabilities(cm.getActiveNetwork());}catch(RuntimeException e){Diagnostics.record(this,"网络状态读取",e,false);}
         if(caps==null||!caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)){sync.finish(ticket,ScheduleCore.Status.OFFLINE,null,0);detail="当前设备没有可用网络；显示本机缓存";ErrorReports.breadcrumb(this,"更新停止：设备离线，保留缓存");updateStatus();return;}
-        coordinator.start((result,message)->{if(!alive||!sync.isCurrent(ticket))return;sync.finish(ticket,result,result==ScheduleCore.Status.SUCCESS?ScheduleCore.Source.OFFICIAL:null,result==ScheduleCore.Status.SUCCESS?System.currentTimeMillis():0);detail=message;loadSnapshot();loadAcademic();renderPage(false);if(result!=ScheduleCore.Status.SUCCESS&&result!=ScheduleCore.Status.LOGIN_REQUIRED)Diagnostics.event(this,"教务同步",result.name()+": "+message);if(foreground){GradeNotifications.deliver(this,pendingChanges);if(result==ScheduleCore.Status.LOGIN_REQUIRED&&!loginShownThisLaunch){loginShownThisLaunch=true;showLogin();}}});
+        coordinator.start(syncEvents(request,ticket),true);
+    }
+    private SyncCoordinator.Events syncEvents(final int request,final int ticket){return new SyncCoordinator.Events(){
+            private boolean current(){return alive&&request==syncRequestId&&AccessMode.official(MainActivity.this);}
+            public void timetableReady(ScheduleCore.Snapshot official){if(!current())return;courseReadyThisRun=true;sync.finish(ticket,ScheduleCore.Status.SUCCESS,ScheduleCore.Source.OFFICIAL,official.fetchedAt);boolean newTerm=snapshot==null||!snapshot.semester.equals(official.semester);snapshot=official;if(newTerm)setCurrentWeek();else week=Math.max(1,Math.min(availableWeeks(),week));detail="课表已校验保存，正在更新其他教务";loadAcademic();renderPage(false);}
+            public void moduleUpdated(String module,boolean success,String message){if(!current())return;loadAcademic();if(page==0&&"exams".equals(module)&&success)renderPage(false);else{refreshBanner();root.post(MainActivity.this::adaptForeground);}if(foreground&&"grades".equals(module)&&success)GradeNotifications.deliver(MainActivity.this,pendingChanges);updateStatus();}
+            public void finished(ScheduleCore.Status result,String message){if(!current())return;completeStatus=result;if(!courseReadyThisRun){sync.finish(ticket,result==ScheduleCore.Status.IDLE?ScheduleCore.Status.ADAPTER_PENDING:result,result==ScheduleCore.Status.SUCCESS?ScheduleCore.Source.OFFICIAL:null,result==ScheduleCore.Status.SUCCESS?System.currentTimeMillis():0);}detail=(courseReadyThisRun?"课表已更新。\n":"")+message;loadAcademic();if(page==0)renderPage(false);else{refreshBanner();updateStatus();root.post(MainActivity.this::adaptForeground);}if(result!=ScheduleCore.Status.SUCCESS&&result!=ScheduleCore.Status.IDLE)Diagnostics.operational(MainActivity.this,"教务同步",result.name()+": "+message);if(foreground){GradeNotifications.deliver(MainActivity.this,pendingChanges);if(result==ScheduleCore.Status.LOGIN_REQUIRED&&!loginShownThisLaunch){loginShownThisLaunch=true;showLogin();}}}
+        };
     }
     private void loadAcademic(){if(!AccessMode.official(this)){pendingChanges=new JSONArray();examRecords=new JSONArray();return;}pendingChanges=academicStore.pending();JSONObject exams=academicStore.load("exams");examRecords=exams==null?new JSONArray():exams.optJSONArray("records");if(examRecords==null)examRecords=new JSONArray();}
     private void refreshBanner(){if(gradeBanner==null)return;gradeBanner.removeAllViews();int grades=0,exams=0;for(int i=0;i<pendingChanges.length();i++){JSONObject entry=pendingChanges.optJSONObject(i);if(entry!=null){if("grades".equals(entry.optString("kind")))grades++;else if("exams".equals(entry.optString("kind")))exams++;}}
@@ -225,14 +240,15 @@ public final class MainActivity extends Activity {
     void acceptOfficialSnapshot(int ticket,ScheduleCore.Snapshot official){
         if(!sync.isCurrent(ticket))return;
         if(official.source!=ScheduleCore.Source.OFFICIAL)throw new IllegalArgumentException("非法同步来源");
-        try{store.save(official);if(sync.finish(ticket,ScheduleCore.Status.ADAPTER_PENDING,null,0)){
-            verifiedOfficialSession();snapshot=official;setCurrentWeek();prefs.edit().putLong("timetable_updated",official.fetchedAt).apply();detail="课表已校验保存；成绩和考试尚需更新";renderPage(false);}}
+        try{store.save(official);if(sync.finish(ticket,ScheduleCore.Status.SUCCESS,ScheduleCore.Source.OFFICIAL,official.fetchedAt)){
+            verifiedOfficialSession();snapshot=official;courseReadyThisRun=true;setCurrentWeek();prefs.edit().putLong("timetable_updated",official.fetchedAt).apply();detail="课表已校验保存；其他教务随后更新";renderPage(false);}}
         catch(Exception error){Diagnostics.record(this,"课表缓存保存",error,false);sync.finish(ticket,ScheduleCore.Status.PARSE_ERROR,null,0);detail="保存失败，未更新成功标记";updateStatus();}
     }
     private void showLogin(){showOfficial("官网登录",SiteGateway.HOME);}
     private void showOfficial(String service,String initialUrl){
         if(!alive||isFinishing()||isDestroyed()||!foreground)return;
         if(loginDialog!=null && loginDialog.isShowing())return;
+        syncRequestId++;coordinator.close();officialLogin.beginForegroundFlow();
         officialService=service;officialNavigationAttempts=0;loginSyncQueued=false;loginShownThisLaunch=true;loginPageFailed=false;loginDialog=new Dialog(this,AppDialog.theme(this,dark)){public boolean dispatchTouchEvent(MotionEvent event){if(event.getAction()==MotionEvent.ACTION_DOWN)IdleRefresh.operated(MainActivity.this);return super.dispatchTouchEvent(event);}public void onBackPressed(){if(loginWeb!=null&&loginWeb.canGoBack())loginWeb.goBack();else dismiss();}};
         loginDialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);LinearLayout body=vertical();body.setBackgroundColor(AppRules.readableSurface(base,screenForeground));
         LinearLayout header=row();header.setPadding(dp(6),0,dp(6),0);header.addView(action("‹",()->{if(loginWeb!=null&&loginWeb.canGoBack())loginWeb.goBack();else loginDialog.dismiss();}));TextView heading=title(service,14);header.addView(heading,new LinearLayout.LayoutParams(0,-2,1));header.addView(action("更多",this::officialTools));header.addView(action("关闭",()->loginDialog.dismiss()));body.addView(header,new LinearLayout.LayoutParams(-1,dp(48)));
@@ -254,6 +270,7 @@ public final class MainActivity extends Activity {
             public void onReceivedHttpError(WebView v,WebResourceRequest request,WebResourceResponse response){if(v==loginWeb&&request.isForMainFrame()){progress.setVisibility(View.GONE);int code=response.getStatusCode();loginConnectionFailure("网页响应",request.getUrl().toString(),code>=500?"官网暂时故障（HTTP "+code+"）":"官网拒绝访问（HTTP "+code+"）",code);}}
             public void onPageFinished(WebView v,String url){if(v!=loginWeb)return;progress.setVisibility(View.GONE);AcademicReader.capture(v);if(!loginPageFailed&&SiteGateway.allowed(url)){domain.setText(Uri.parse(url).getHost());if(loginConnectionStatus!=null)loginConnectionStatus.setText("网页已载入，请完成登录；点此查看连接详情");WebDiagnostics.record(MainActivity.this,"页面载入",url,"已收到页面，尚不代表课表同步成功",0);
                 for(int delay:new int[]{300,1000,2500,5000,9000})handler.postDelayed(()->{if(alive&&loginWeb==v&&url.equals(v.getUrl())){readAcademicFromLogin();if(officialService.equals("官网登录")&&url.contains("/sys/wdkb/"))readFromLogin(false);}},delay);
+                handler.postDelayed(()->trySavedLogin(v,url),350);
             }}
             public void onReceivedSslError(WebView v,SslErrorHandler h,android.net.http.SslError error){h.cancel();if(v!=loginWeb)return;progress.setVisibility(View.GONE);loginConnectionFailure("安全连接",error.getUrl(),"官网证书验证失败，已停止加载",error.getPrimaryError());}
             public boolean onRenderProcessGone(WebView v,android.webkit.RenderProcessGoneDetail error){
@@ -291,7 +308,7 @@ public final class MainActivity extends Activity {
         });
     }
     private void saveReadPage(JSONObject parsed){
-        coordinator.close();int ticket=sync.begin();updateStatus();
+        syncRequestId++;coordinator.close();int ticket=sync.begin();updateStatus();
         try{
             ScheduleCore.Snapshot official=CourseReader.decode(parsed,configuredMonday(parsed),1,parsed.optLong("readAt",System.currentTimeMillis()));
             acceptOfficialSnapshot(ticket,official);
@@ -334,6 +351,32 @@ public final class MainActivity extends Activity {
 
     private void verifiedOfficialSession(){prefs.edit().putString("entry_mode",AccessMode.OFFICIAL).apply();loadAcademic();IdleRefresh.schedule(this);}
 
+    private static final String CREDENTIAL_NOTICE="账号与密码使用 Android Keystore 密钥加密，密文仅保存在本机应用私有存储。仅在你授权后用于官网登录，不上传项目服务器、GitHub 或错误报告。App 需要联网访问教务系统；本地加密不能保证绝无泄露。验证码或二次认证仍需你完成，可随时删除保存信息。";
+    private void offerCredentialNotice(){
+        if(!alive||!foreground||prefs.getBoolean("credential_intro_v1",false)||credentialIntro!=null)return;
+        if(AccessMode.IMPORT.equals(prefs.getString("entry_mode",AccessMode.NONE))){prefs.edit().putBoolean("credential_intro_v1",true).apply();return;}
+        if(loginDialog!=null||handDialog!=null||credentialDialog!=null||credentialOptions!=null){handler.postDelayed(this::offerCredentialNotice,1000);return;}
+        prefs.edit().putBoolean("credential_intro_v1",true).apply();credentialIntro=new AppDialog.Builder(this).setTitle("可选：保存官网登录信息").setMessage(CREDENTIAL_NOTICE+"\n\n保存后只在前台尝试一次重新登录；不想保存也可以正常使用。").setPositiveButton("设置保存",(d,w)->handler.post(this::editSavedLogin)).setNegativeButton("暂不保存",null).create();credentialIntro.setOnDismissListener(d->credentialIntro=null);credentialIntro.show();
+    }
+    private void showSavedLogin(){
+        if(!alive||!foreground||credentialOptions!=null)return;
+        if(!credentialVault.hasCredentials()){editSavedLogin();return;}
+        credentialOptions=new AppDialog.Builder(this).setTitle("保存账号与密码").setMessage(CREDENTIAL_NOTICE+"\n\n当前已保存。自动填充仅适配已核对的本地登录页面，统一身份认证仍由你在官网完成。").setPositiveButton("打开官网登录",(d,w)->showLogin()).setNeutralButton("更改保存信息",(d,w)->handler.post(this::editSavedLogin)).setNegativeButton("删除保存信息",(d,w)->forgetSavedLogin()).create();credentialOptions.setOnDismissListener(d->credentialOptions=null);credentialOptions.show();
+    }
+    private void editSavedLogin(){
+        if(!alive||!foreground||credentialDialog!=null)return;LinearLayout fields=vertical();
+        EditText account=new EditText(this),password=new EditText(this);account.setSingleLine();account.setHint("教务账号");account.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);password.setSingleLine();password.setHint("教务密码");password.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD|android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        for(EditText field:new EditText[]{account,password}){field.setTextColor(ink);field.setSaveEnabled(false);field.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS);fields.addView(field,new LinearLayout.LayoutParams(-1,dp(52)));}
+        TextView validation=text("",12,0xFFE04444);fields.addView(validation);credentialDialog=new AppDialog.Builder(this).setTitle("保存官网登录信息").setMessage(CREDENTIAL_NOTICE).setView(fields).setPositiveButton("保存并允许前台重登录",null).setNegativeButton("取消",null).show();final AppDialog dialog=credentialDialog;dialog.getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE);
+        dialog.setOnDismissListener(d->{account.setText("");password.setText("");credentialDialog=null;});
+        dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE).setOnClickListener(v->{String user=account.getText().toString().trim(),secret=password.getText().toString();if(user.isEmpty()||user.length()>200||secret.isEmpty()||secret.length()>1024){validation.setText("请填写有效的账号和密码");return;}dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE).setEnabled(false);dialog.getButton(android.content.DialogInterface.BUTTON_NEGATIVE).setEnabled(false);dialog.setCancelable(false);validation.setText("正在加密保存…");credentialExecutor.execute(()->{boolean saved=credentialVault.save(user,secret);handler.post(()->{if(!alive)return;if(saved){prefs.edit().putBoolean("saved_login_enabled",true).apply();dialog.dismiss();renderPage(false);toast("已在本机加密保存，可在设置中删除");}else{validation.setText("加密保存失败，未开启自动登录；可继续使用官网登录");dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE).setEnabled(true);dialog.getButton(android.content.DialogInterface.BUTTON_NEGATIVE).setEnabled(true);dialog.setCancelable(true);}});});});
+    }
+    private void forgetSavedLogin(){prefs.edit().putBoolean("saved_login_enabled",false).apply();credentialExecutor.execute(()->{boolean removed=credentialVault.delete();handler.post(()->{if(alive){renderPage(false);toast(removed?"已删除本机保存的账号密码":"已关闭自动登录，保存信息清理失败，请重试删除");}});});}
+    private void trySavedLogin(WebView view,String url){
+        if(!alive||!foreground||loginPageFailed||loginWeb!=view||!url.equals(view.getUrl())||!OfficialLogin.isAllowedUrl(url)||credentialLoading||!prefs.getBoolean("saved_login_enabled",false))return;credentialLoading=true;
+        credentialExecutor.execute(()->{CredentialVault.Credentials saved=credentialVault.load();handler.post(()->{credentialLoading=false;if(!alive||!foreground||view!=loginWeb||!url.equals(view.getUrl())||!prefs.getBoolean("saved_login_enabled",false))return;if(saved==null){prefs.edit().putBoolean("saved_login_enabled",false).apply();if(loginConnectionStatus!=null){loginConnectionStatus.setVisibility(View.VISIBLE);loginConnectionStatus.setText("保存信息不可用，请手动登录；可在设置中重新保存");}return;}officialLogin.fill(view,saved,()->alive&&foreground&&loginWeb==view&&prefs.getBoolean("saved_login_enabled",false),status->{if(!alive||view!=loginWeb)return;if(loginConnectionStatus!=null&&!"blocked".equals(status)){loginConnectionStatus.setVisibility(View.VISIBLE);loginConnectionStatus.setText("submitted".equals(status)?"已通过官网登录按钮尝试一次登录，请稍候；失败时请手动完成":"已填入保存信息，请完成官网验证并点击登录");}});});});
+    }
+
     private View settings(){
         ScrollView scroll=new ScrollView(this);settingsScroll=scroll;LinearLayout view=vertical();scroll.addView(view);view.addView(pageHeader("设置","让它像你喜欢的样子"));LinearLayout content=vertical();content.setPadding(dp(20),0,dp(20),dp(24));view.addView(content);
         group(content,"外观");
@@ -349,6 +392,7 @@ public final class MainActivity extends Activity {
         setting(content,"学期起始日期",prefs.getString("first_monday","").isEmpty()?"优先从官网校历自动获取；可手动校正":prefs.getString("first_monday",""),()->chooseFirstMonday(()->renderPage(false)));
         group(content,"同步与提醒");
         setting(content,"官网登录","所有教务服务均在官网 WebView 中打开",this::showLogin);
+        setting(content,"保存账号与密码",prefs.getBoolean("saved_login_enabled",false)&&credentialVault.hasCredentials()?"本机加密保存 · 仅前台尝试重新登录":"可选保存 · 不上传第三方",this::showSavedLogin);
         setting(content,"最近更新日期","查看各模块时间和连接状态",this::showStatus);
         setting(content,"立即刷新","打开或返回 App 时也会更新",this::refresh);
         setting(content,"新成绩通知",GradeNotifications.allowed(this)?"通知已允许 · 同时显示顶部提示":"系统通知未允许 · 顶部提示仍可查看",this::notificationPermission);
@@ -358,7 +402,7 @@ public final class MainActivity extends Activity {
         setting(content,"清除数据并退出账号","清除课程、成绩、考试、未读消息和官网会话",()->new AppDialog.Builder(this).setTitle("清除数据并退出？").setMessage("保留风格与背景设置。再次登录后会建立新的成绩基线。").setPositiveButton("清除并退出",(d,w)->logout()).setNegativeButton("取消",null).show());
         group(content,"关于与排查");
         developerSetting(content);
-        setting(content,"使用声明","非官方应用 · 不可商用 · 1.0.1",()->explain("使用声明","用于个人非商业学习与课表查看。应用名称：牛逼课表。开发者：Enota13。官网网页登录会话仅保存在本机，项目不自动上传教务数据或错误报告。"));
+        setting(content,"使用声明","非官方应用 · 不可商用 · "+BuildInfo.VERSION,()->explain("使用声明","用于个人非商业学习与课表查看。应用名称：牛逼课表。开发者：Enota13。官网网页登录会话仅保存在本机，项目不自动上传教务数据或错误报告。"));
         setting(content,"项目仓库","github.com/Enota13-name/LUTschedule",()->{try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(BuildInfo.REPOSITORY)));}catch(Exception e){Diagnostics.record(this,"打开项目仓库",e,false);}});
         group(content,"错误报告");
         setting(content,"复制错误报告",Diagnostics.last(this).isEmpty()?"设备、版本、源码链接与排查指引":"已记录错误 · 复制后交给 AI 排查",this::showErrorReport);
@@ -382,7 +426,7 @@ return scroll;
     }
     private void chooseBackgroundOpacity(){LinearLayout body=vertical();TextView value=text("",14,ink);SeekBar seek=new SeekBar(this);seek.setMax(100);seek.setProgress(100-prefs.getInt("veil",25));Runnable label=()->value.setText(seek.getProgress()+"% · 数值越高，图片越清晰");label.run();body.addView(value);body.addView(seek);seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}public void onProgressChanged(SeekBar s,int n,boolean user){label.run();}});new AppDialog.Builder(this).setTitle("背景透明度").setView(body).setPositiveButton("保存",(d,w)->{prefs.edit().putInt("veil",100-seek.getProgress()).apply();renderPage(false);}).setNegativeButton("取消",null).show();}
     private void showErrorReport(){String report=Diagnostics.report(this);new AppDialog.Builder(this).setTitle("本地错误报告").setMessage(report).setPositiveButton("复制错误报告",(d,w)->Diagnostics.copy(this)).setNegativeButton("关闭",null).show();}
-    boolean diagnosticsCanShow(){return alive&&initialized&&foreground&&!isFinishing()&&!isDestroyed()&&(handDialog==null||!handDialog.isShowing())&&(errorDialog==null||!errorDialog.isShowing())&&(backgroundCrop==null||!backgroundCrop.isShowing());}
+    boolean diagnosticsCanShow(){return alive&&initialized&&foreground&&!isFinishing()&&!isDestroyed()&&(handDialog==null||!handDialog.isShowing())&&(errorDialog==null||!errorDialog.isShowing())&&(backgroundCrop==null||!backgroundCrop.isShowing())&&(credentialDialog==null||!credentialDialog.isShowing())&&(credentialIntro==null||!credentialIntro.isShowing())&&(credentialOptions==null||!credentialOptions.isShowing())&&(loginDialog==null||!loginDialog.isShowing());}
     void showDiagnosticError(String id){errorDialog=new AppDialog.Builder(this).setTitle("发生了错误").setMessage("错误编号："+id+"\n错误报告已保存在本机，有效课表缓存会继续显示。\n\n请到设置页面最底部复制错误报告，并交给 AI 排查。报告包含项目仓库与对应源码分支。").setPositiveButton("去设置",(d,w)->{if(loginDialog!=null)loginDialog.dismiss();navigate(2);if(settingsScroll!=null)settingsScroll.post(()->settingsScroll.fullScroll(View.FOCUS_DOWN));}).setNegativeButton("稍后处理",null).show();errorDialog.setOnDismissListener(d->errorDialog=null);}
     private void divider(LinearLayout host){View line=new View(this);line.setBackgroundColor(dark?0x55444444:0x55888888);host.addView(line,new LinearLayout.LayoutParams(-1,dp(1)));}
     private void setting(LinearLayout host,String name,String summary,Runnable callback){LinearLayout item=vertical();item.setPadding(dp(2),dp(14),dp(2),dp(14));clickable(item,Color.TRANSPARENT);item.addView(title(name,15));space(item,6);item.addView(text(summary,12,muted));item.setContentDescription(name);item.setOnClickListener(v->{developerTaps=0;IdleRefresh.operated(this);ErrorReports.breadcrumb(this,"设置："+name);callback.run();});host.addView(item,new LinearLayout.LayoutParams(-1,-2));divider(host);}
@@ -405,7 +449,7 @@ return scroll;
         prefs.edit().putString("entry_mode",AccessMode.IMPORT).apply();IdleRefresh.schedule(this);loadAcademic();loadSnapshot();renderPage(false);
         if(snapshot!=null&&!prefs.contains("handedness"))handler.postDelayed(this::firstHandedness,150);
     }
-    private void logout(){coordinator.close();int ticket=sync.begin();sync.finish(ticket,ScheduleCore.Status.LOGIN_REQUIRED,null,0);
+    private void logout(){syncRequestId++;coordinator.close();prefs.edit().putBoolean("saved_login_enabled",false).apply();credentialExecutor.execute(()->{boolean removed=credentialVault.delete();if(!removed)handler.post(()->{if(alive)toast("已退出并关闭自动登录；保存信息清理失败，请在设置中重试删除");});});int ticket=sync.begin();sync.finish(ticket,ScheduleCore.Status.LOGIN_REQUIRED,null,0);
         store.clear();academicStore.clear();getSharedPreferences("notification_seen",0).edit().clear().apply();SharedPreferences.Editor logoutEdit=prefs.edit().putString("entry_mode",AccessMode.NONE).remove("course_url").remove("first_monday").remove("calendar_semester").remove("last_full_success").remove("grades_updated").remove("exams_updated").remove("timetable_updated");for(String[] group:AcademicCatalog.GROUPS)for(String label:group)logoutEdit.remove("service_"+label);logoutEdit.apply();IdleRefresh.schedule(this);loadAcademic();snapshot=null;CookieManager.getInstance().removeAllCookies(value->CookieManager.getInstance().flush());
         android.webkit.WebStorage.getInstance().deleteAllData();detail="已清除会话与本地课表";renderPage(false);toast("已退出账号");}
     protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);if(result!=RESULT_OK || data==null || data.getData()==null)return;
@@ -422,9 +466,9 @@ return scroll;
     public void onConfigurationChanged(Configuration c){super.onConfigurationChanged(c);if(isDark()!=dark)recreate();else renderPage(false);}
     public boolean dispatchTouchEvent(MotionEvent event){if(initialized&&event.getAction()==MotionEvent.ACTION_DOWN){IdleRefresh.operated(this);android.graphics.Rect area=new android.graphics.Rect();if(developerRow==null||!developerRow.getGlobalVisibleRect(area)||!area.contains((int)event.getRawX(),(int)event.getRawY()))developerTaps=0;}return super.dispatchTouchEvent(event);}
     protected void onUserLeaveHint(){userLeftApp=true;super.onUserLeaveHint();}
-    protected void onStop(){foreground=false;Diagnostics.detach(this);super.onStop();returnFromBackground=true;}
-    protected void onResume(){super.onResume();foreground=true;if(initialized){Diagnostics.attach(this);if(snapshot!=null&&!prefs.contains("handedness"))handler.postDelayed(this::firstHandedness,150);if(userLeftApp){userLeftApp=false;IdleRefresh.operated(this);}loadAcademic();refreshBanner();GradeNotifications.deliver(this,pendingChanges);if(returnFromBackground){returnFromBackground=false;handler.post(this::refresh);}}}
-    protected void onDestroy(){alive=false;Diagnostics.detach(this);if(backgroundAnimator!=null)backgroundAnimator.cancel();if(errorDialog!=null)errorDialog.dismiss();if(contactDialog!=null)contactDialog.dismiss();handler.removeCallbacksAndMessages(null);if(coordinator!=null)coordinator.close();if(gateway!=null)gateway.close();if(loginDialog!=null)loginDialog.dismiss();if(backgroundCrop!=null)backgroundCrop.dismiss();if(handDialog!=null)handDialog.dismiss();if(store!=null)store.close();if(academicStore!=null)academicStore.close();if(background!=null){background.recycle();background=null;}super.onDestroy();}
+    protected void onStop(){foreground=false;syncRequestId++;if(coordinator!=null)coordinator.close();Diagnostics.detach(this);super.onStop();returnFromBackground=true;}
+    protected void onResume(){super.onResume();foreground=true;if(initialized){Diagnostics.attach(this);handler.postDelayed(this::offerCredentialNotice,650);if(snapshot!=null&&!prefs.contains("handedness"))handler.postDelayed(this::firstHandedness,150);if(userLeftApp){userLeftApp=false;IdleRefresh.operated(this);}loadAcademic();refreshBanner();GradeNotifications.deliver(this,pendingChanges);if(returnFromBackground){returnFromBackground=false;handler.post(this::refresh);}}}
+    protected void onDestroy(){alive=false;syncRequestId++;credentialExecutor.shutdown();Diagnostics.detach(this);if(backgroundAnimator!=null)backgroundAnimator.cancel();if(errorDialog!=null)errorDialog.dismiss();if(contactDialog!=null)contactDialog.dismiss();if(credentialDialog!=null)credentialDialog.dismiss();if(credentialIntro!=null)credentialIntro.dismiss();if(credentialOptions!=null)credentialOptions.dismiss();handler.removeCallbacksAndMessages(null);if(coordinator!=null)coordinator.close();if(gateway!=null)gateway.close();if(loginDialog!=null)loginDialog.dismiss();if(backgroundCrop!=null)backgroundCrop.dismiss();if(handDialog!=null)handDialog.dismiss();if(store!=null)store.close();if(academicStore!=null)academicStore.close();if(background!=null){background.recycle();background=null;}super.onDestroy();}
 
     private RectF wallpaperRect(){int w=root.getWidth(),h=root.getHeight();if(background==null||background.isRecycled())return new RectF(0,0,w,h);boolean split=prefs.getString("background_layout","shared").equals("split");float target=split?w*3f:w,scale=Math.max(target/background.getWidth(),h/(float)background.getHeight());float bw=background.getWidth()*scale,bh=background.getHeight()*scale,left=(target-bw)/2-(split?backgroundPage*w:0);return new RectF(left,(h-bh)/2,left+bw,(h+bh)/2);}
     private int veilAlpha(){return Math.min(255,Math.max(0,prefs.getInt("veil",25)*255/100));}

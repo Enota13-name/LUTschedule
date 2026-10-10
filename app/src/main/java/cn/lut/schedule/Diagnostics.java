@@ -6,6 +6,8 @@ import android.graphics.drawable.GradientDrawable;
 import android.view.*;
 import android.widget.*;
 import java.lang.ref.WeakReference;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /** Local persistence first; fatal errors are recovered on the next launch. */
 public final class Diagnostics extends Application {
@@ -15,11 +17,14 @@ public final class Diagnostics extends Application {
     public void onCreate(){super.onCreate();Thread.UncaughtExceptionHandler previous=Thread.getDefaultUncaughtExceptionHandler();Thread.setDefaultUncaughtExceptionHandler((thread,error)->{record(this,"未处理异常",error,true);if(previous!=null)previous.uncaughtException(thread,error);else{android.os.Process.killProcess(android.os.Process.myPid());System.exit(10);}});}
     static void record(Context c,String stage,Throwable error,boolean fatal){ErrorReports.record(c,stage,"本地异常，详见堆栈",error,fatal);if(!fatal)dispatch();}
     static void event(Context c,String stage,String reason){ErrorReports.record(c,stage,reason,null,false);dispatch();}
+    /** Records expected connection, timeout, or cancellation outcomes without requesting a dialog. */
+    static void operational(Context c,String stage,String message){ErrorReports.operational(c,stage,message);}
     static String last(Context c){return c.getSharedPreferences("diagnostics",0).getString("events","[]").equals("[]")?"":ErrorReports.export(c);}
     static String report(Context c){return ErrorReports.export(c);}
     static boolean needsRecovery(Context c){return c.getSharedPreferences("diagnostics",0).getBoolean("fatal",false);}
     static void clearFatal(Context c){c.getSharedPreferences("diagnostics",0).edit().putBoolean("fatal",false).apply();}
-    static void attach(MainActivity a){active=new WeakReference<>(a);dispatch();}
+    static void attach(MainActivity a){active=new WeakReference<>(a);clearLegacyOperationalPending(a);dispatch();}
+    private static void clearLegacyOperationalPending(Context c){SharedPreferences p=c.getSharedPreferences("diagnostics",0);if(p.getBoolean("legacy_operational_migrated",false))return;SharedPreferences.Editor migration=p.edit().putBoolean("legacy_operational_migrated",true);if(!p.getBoolean("pending",false)||p.getBoolean("fatal",false)){migration.apply();return;}try{String id=p.getString("event_id","");JSONArray events=new JSONArray(p.getString("events","[]"));for(int i=events.length()-1;i>=0;i--){JSONObject event=events.optJSONObject(i);if(event!=null&&id.equals(event.optString("id"))&&"OperationalError".equals(event.optString("exception"))&&!event.optBoolean("fatal")){migration.putBoolean("pending",false);break;}}}catch(Exception ignored){}migration.apply();}
     static void detach(MainActivity a){if(active.get()==a)active.clear();}
     private static void dispatch(){ui.removeCallbacks(show);ui.postDelayed(show,650);}
     private static final Runnable show=new Runnable(){public void run(){MainActivity a=active.get();if(a==null)return;SharedPreferences p=a.getSharedPreferences("diagnostics",0);String id=p.getString("event_id","");if(id.isEmpty()||id.equals(shown)||!p.getBoolean("pending",false))return;if(!a.diagnosticsCanShow()){ui.postDelayed(this,650);return;}shown=id;p.edit().putBoolean("pending",false).apply();a.showDiagnosticError(id);}};

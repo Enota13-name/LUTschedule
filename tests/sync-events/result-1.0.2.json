@@ -1,0 +1,9 @@
+{
+  "scope": "synthetic virtual-time harness only; production SyncCoordinator and SiteGateway source; no live network, Android SQLite, Cookie storage, or UI frame measurement",
+  "productionSha256": {
+    "SyncCoordinator.java": "5C82047EE4CE76B3AF81C2D729A7C6E0D1C33166006B8C78EA47B431C2859DCC",
+    "SiteGateway.java": "E0BFE82EEE3F8371B0A3C1B3B1238F775BE9601A87900750B76E1137C1AA0AEA"
+  },
+  "scenarioCount": 15,
+  "harnessOutput": "PASS {normal={moduleEvents=7, readyAtMs=1, finalStatus=SUCCESS, savedAtMs=1}, laterFailure={finalStatus=ADAPTER_PENDING, readyCount=1}, saveFailure={finalStatus=PARSE_ERROR, readyCount=0}, course403={finishedAtMs=0, moduleEvents=0, status=UNREACHABLE}, cancelled={readyCount=0, finalCallback=false}, foregroundPreemption={foregroundReady=1, backgroundReady=0, backgroundStatus=IDLE}, backgroundRejection={started=false, foregroundReady=1}, roundBudget={expectedMaxMs=120000, finishedAtMs=120000}, readFailureMapping={401=LOGIN_REQUIRED, 429=UNREACHABLE, 503=SERVER_ERROR, 403=UNREACHABLE}, moduleHttp403={examsSucceeded=true, readyCount=1, gradesFailed=true, finalStatus=UNREACHABLE}, moduleHttp404={examsSucceeded=true, readyCount=1, gradesFailed=true, finalStatus=UNREACHABLE}, moduleHttp500={examsSucceeded=true, readyCount=1, gradesFailed=true, finalStatus=SERVER_ERROR}, moduleHttp503={examsSucceeded=true, readyCount=1, gradesFailed=true, finalStatus=SERVER_ERROR}, moduleHttp401={examsSucceeded=false, readyCount=1, gradesFailed=true, finalStatus=LOGIN_REQUIRED}, moduleHttp429={examsSucceeded=false, readyCount=1, gradesFailed=true, finalStatus=UNREACHABLE}}"
+}

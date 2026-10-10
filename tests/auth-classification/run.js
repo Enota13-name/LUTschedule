@@ -45,7 +45,8 @@ function makeEnv(transport, scenario) {
       let success, failure;
       const request = { done(fn) { success = fn; queueMicrotask(() => {
         if (scenario.kind === 'normal') success(payloadFor(options.url));
-        else if (scenario.kind === 'loginHtml') failure({ status: 200 }, 'parsererror');
+        else if (scenario.kind === 'loginHtml') failure({ status: 200, responseText: '<html><input type="password">统一身份认证</html>' }, 'parsererror');
+        else if (scenario.kind === 'htmlParseError') failure({ status: 200, responseText: '<html>synthetic private response marker</html>' }, 'parsererror');
         else if (scenario.kind === 'network') failure({ status: 0 }, 'error');
         else if (scenario.kind === 'timeout') failure({ status: 0 }, 'timeout');
         else failure({ status: scenario.status }, 'error');
@@ -70,14 +71,15 @@ async function runCase(transport, scenario) {
 
 async function main() {
   const cases = [
-    { name: 'HTTP 401', status: 401, expected: { fetch: [true, 0, false, false], jquery: [true, 401, false, false] } },
-    { name: 'HTTP 403', status: 403, expected: { fetch: [true, 0, false, false], jquery: [true, 403, false, false] } },
+    { name: 'HTTP 401', status: 401, expected: { fetch: [true, 401, false, false], jquery: [true, 401, false, false] } },
+    { name: 'HTTP 403', status: 403, expected: { fetch: [false, 403, false, false], jquery: [false, 403, false, false] } },
     { name: 'HTTP 429', status: 429, expected: { fetch: [false, 429, false, false], jquery: [false, 429, false, false] } },
     { name: 'HTTP 503', status: 503, expected: { fetch: [false, 503, false, false], jquery: [false, 503, false, false] } },
-    { name: 'HTTP 200 login HTML', kind: 'loginHtml', status: 200, expected: { fetch: [true, 0, false, false], jquery: [false, 200, false, false] } },
-    { name: 'network failure', kind: 'network', expected: { fetch: [false, 0, true, false], jquery: [false, 0, false, false] } },
+    { name: 'HTTP 200 login HTML', kind: 'loginHtml', status: 200, expected: { fetch: [true, 200, false, false], jquery: [true, 200, false, false] } },
+    { name: 'jQuery non-login parsererror', kind: 'htmlParseError', expected: { jquery: [false, 200, false, false] } },
+    { name: 'network failure', kind: 'network', expected: { fetch: [false, 0, true, false], jquery: [false, 0, true, false] } },
     { name: 'fetch AbortError', kind: 'abort', expected: { fetch: [false, 0, true, false] } },
-    { name: 'jQuery timeout', kind: 'timeout', expected: { jquery: [false, 0, false, false] } },
+    { name: 'jQuery timeout', kind: 'timeout', expected: { jquery: [false, 0, true, false] } },
     { name: 'normal synthetic data', kind: 'normal', status: 200, expected: { fetch: [false, 0, false, true], jquery: [false, 0, false, true] } }
   ];
   const results = [];
@@ -91,6 +93,8 @@ async function main() {
       `${result.transport}/${result.scenario} adapter classification`);
     assert.deepStrictEqual([result.page.login, result.page.http, result.page.networkError, result.page.complete], expected,
       `${result.transport}/${result.scenario} read-course-page propagation`);
+    assert(!String(result.error || '').includes('synthetic private response marker'),
+      `${result.transport}/${result.scenario} must not expose response body`);
   }
   process.stdout.write(JSON.stringify({ source: path.relative(process.cwd(), adapterPath), reader: path.relative(process.cwd(), readerPath),
     networkAccess: false, scenarioCount: results.length,

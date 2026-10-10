@@ -1,21 +1,23 @@
 {
-  "version": "1.0.1",
-  "apkBytes": 258903,
-  "apkSha256": "EAA78864A2CD33B42BEF588D0CBE3AA753C1AF35F006EDC7072E76A617249C7D",
+  "version": "1.0.2",
+  "apkBytes": 275358,
+  "apkSha256": "35F07CCF088680EFA19E0C9388931E9CAFCB46B5C6B42B3B58DAE322BF34897E",
   "iconSize": [
     512,
     512
   ],
   "redBounds": [
-    118,
-    179,
-    395,
+    117,
+    180,
+    394,
     334
   ],
   "centerOffsetPixels": [
-    1.0,
-    1.0
+    0.0,
+    1.5
   ],
   "packagedIconMatches": true,
-  "oldIconAbsent": true
+  "oldIconAbsent": true,
+  "productionTestFixturesAbsent": true,
+  "loginScriptPackaged": true
 }

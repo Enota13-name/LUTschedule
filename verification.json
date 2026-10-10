@@ -1,10 +1,10 @@
 {
   "app": "牛逼课表",
-  "version": "1.0.1",
-  "versionCode": 12,
-  "apk": "LUT-Schedule-1.0.1.apk",
-  "bytes": 258903,
-  "sha256": "EAA78864A2CD33B42BEF588D0CBE3AA753C1AF35F006EDC7072E76A617249C7D",
+  "version": "1.0.2",
+  "versionCode": 13,
+  "apk": "LUT-Schedule-1.0.2.apk",
+  "bytes": 275358,
+  "sha256": "35F07CCF088680EFA19E0C9388931E9CAFCB46B5C6B42B3B58DAE322BF34897E",
   "minAndroid": "8.0",
   "minSdk": 26,
   "targetSdk": 36,
@@ -15,8 +15,8 @@
   "signerSha256": "0b959c5671ddda5d9dcec039bf8405c01f5974095ca3c47a119eda9881ee3a1f",
   "sameSigningCertificateAsPreviousVersions": true,
   "coreChecks": 123,
-  "androidIntegrationAssertions": 136,
-  "androidRegressionAssertions": 0,
+  "androidIntegrationAssertions": 305,
+  "androidRegressionAssertions": 42,
   "androidIntegrationResult": "PASS",
   "emulatorAndroid": "15 / API 35",
   "launcherColdStartPassed": true,
@@ -60,7 +60,11 @@
     "independent today marker with no date strip, varied dark courses and room on final line",
     "two-finger crop/export/no blank edges/cancel preservation and course palette preview",
     "fixed developer, silent single tap, five taps copy exact email and app dialog",
-    "new fixed icon-author credit and existing five-tap clipboard behavior"
+    "new fixed icon-author credit and existing five-tap clipboard behavior",
+    "9 storage and silent-log assertions",
+    "40 Keystore encryption, replacement, tamper, deletion and official-origin guard assertions",
+    "40 MainActivity timetable-ready, later-failure, exams, stale request, lifecycle cancellation and optional credential UI assertions",
+    "synthetic CookieManager persistent and session cookies observed after app force-stop and process restart"
   ],
   "limitations": [
     "Native App full sync with a real school account has not been completed",
@@ -72,13 +76,17 @@
     "Idle scheduling is best effort under Android/Xiaomi background limits",
     "System permission, file picker, keyboard and OS context UI remain Android-owned",
     "Fatal recovery appears on next launch; OS process kills/ANRs/native failures may not supply a Java stack",
-    "A report cannot guarantee that every AI can fix an issue without more evidence"
+    "A report cannot guarantee that every AI can fix an issue without more evidence",
+    "Saved-login functionality has not been used with a real school account",
+    "Fallback module scope cannot reliably distinguish accounts when both page account and Cookie are missing",
+    "Synthetic Cookie persistence does not prove the school accepts a session after restart",
+    "No Xiaomi/API36 live performance or school timetable first-frame timing was measured"
   ],
   "screenshots": "docs/screenshots / native captures with synthetic imported JSON and synthetic responses",
   "reportRedactionChecks": 7,
-  "androidProtocolAssertions": 0,
+  "androidProtocolAssertions": 38,
   "repository": "https://github.com/Enota13-name/LUTschedule",
-  "sourceRef": "v1.0.1",
+  "sourceRef": "v1.0.2",
   "repositoryPrivateKeyIncluded": false,
   "backgroundLayoutModes": [
     "shared",
@@ -131,41 +139,68 @@
   "homePageAlwaysTimetable": true,
   "recoveryVerificationScope": "Recovery code unchanged; current suite validates report access and redaction, not a new fatal/crash pressure injection",
   "testControlTimeoutsExcludedFromPassingResults": true,
-  "successfulRegressionRuns": 0,
+  "successfulRegressionRuns": 1,
   "assertionCountsAreDistinctNotRepeatedRunTotals": true,
   "currentAndroidTestPhases": [
-    "design"
+    "design",
+    "protocol",
+    "regression",
+    "update",
+    "session-write",
+    "session-read"
   ],
-  "unchangedBaselineEvidence": {
-    "sourceRef": "v1.0.0",
-    "androidIntegrationAssertions": 216,
-    "androidSourceUiAssertions": 136,
-    "androidProtocolAssertions": 38,
-    "androidRegressionAssertions": 42,
-    "scope": "Protocol, notifications, exams and idle behavior were not changed or rerun in 1.0.1. Their verification remains baseline evidence, not current-run assertions."
-  },
-  "navigationOrderPersistenceAndHomeLaunchEvidence": "v1.0.0 regression; 1.0.1 design verifies order selection and navigation",
+  "navigationOrderPersistenceAndHomeLaunchEvidence": "1.0.2 design and regression",
   "iconCenterVerification": {
-    "version": "1.0.1",
-    "apkBytes": 258903,
-    "apkSha256": "EAA78864A2CD33B42BEF588D0CBE3AA753C1AF35F006EDC7072E76A617249C7D",
+    "version": "1.0.2",
+    "apkBytes": 275358,
+    "apkSha256": "35F07CCF088680EFA19E0C9388931E9CAFCB46B5C6B42B3B58DAE322BF34897E",
     "iconSize": [
       512,
       512
     ],
     "redBounds": [
-      118,
-      179,
-      395,
+      117,
+      180,
+      394,
       334
     ],
     "centerOffsetPixels": [
-      1.0,
-      1.0
+      0.0,
+      1.5
     ],
     "packagedIconMatches": true,
-    "oldIconAbsent": true
+    "oldIconAbsent": true,
+    "productionTestFixturesAbsent": true,
+    "loginScriptPackaged": true
   },
   "settingsAttributionScreenshot": "docs/screenshots/settings-attribution.png",
-  "artifactEvidence": "tests/android/artifact-result.json"
+  "artifactEvidence": "tests/android/artifact-result.json",
+  "androidUpdateAssertions": 89,
+  "androidStorageAssertions": 9,
+  "androidCredentialAssertions": 40,
+  "androidUpdateUiAssertions": 40,
+  "authClassificationScenarios": 17,
+  "loginFormSecurityScenarios": 5,
+  "syncEventScenarios": 15,
+  "optionalLocalCredentialSave": true,
+  "credentialsEncryption": "Android Keystore / AES-GCM",
+  "credentialsStoredInPrivateDirectory": true,
+  "credentialsAutoUpload": false,
+  "credentialsOnlyOfficialForegroundLogin": true,
+  "savedLoginLiveAccountTested": false,
+  "courseReadyBeforeOtherModules": true,
+  "expectedNetworkFailuresSilent": true,
+  "foregroundBackgroundSessionMutex": true,
+  "roundBudgetMs": 120000,
+  "changeInboxLimit": 100,
+  "changeInboxRetentionDays": 90,
+  "notificationHistoryLimit": 100,
+  "notificationHistoryRetentionDays": 90,
+  "cookieProcessRestartSyntheticTested": true,
+  "syntheticPersistentCookieSurvived": true,
+  "syntheticSessionCookieSurvived": true,
+  "schoolServerSessionTtlConfirmed": false,
+  "currentProxyChanged": false,
+  "emulatorWebView": "com.android.webview / 124.0.6367.219",
+  "nativeLifecycleTestScope": "Direct Activity lifecycle hook and stale-event checks; not Android/Xiaomi background pressure testing"
 }
