@@ -70,6 +70,7 @@
 
 | 阅读方向 | 文档 |
 |---|---|
+| 已知问题 | [同步与存储待修复项](docs/KNOWN_ISSUES.md) |
 | 使用与体验 | [重点功能与截图](docs/FEATURES.md) · [课表导入格式](docs/IMPORT_FORMAT.md) |
 | 需求与设计过程 | [最终需求提示词](docs/FINAL_PROMPT.md) · [Vibe coding 复盘](docs/VIBE_CODING_REVIEW.md) |
 | 开发与维护 | [构建与验证](docs/DEVELOPMENT.md) · [错误报告排查](docs/ERROR_REPORTS.md) · [图标素材说明](docs/ICON.md) |
